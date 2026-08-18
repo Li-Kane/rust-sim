@@ -21,16 +21,18 @@ pub struct Joint {
     pub dofs: [Dof; 3],
     pub world_transform: Mat4,
     pub local_transform: Mat4,
-    pub children: Vec<usize>,               // idx in skeleton.joints of its children
+    pub parent: Option<usize>,
+    pub children: Vec<usize>, // idx in skeleton.joints of its children
 }
 
 impl Joint {
-    pub fn new(name: impl Into<String>, transform: Mat4) -> Self {
+    pub fn new(name: impl Into<String>, transform: Mat4, parent: Option<usize>) -> Self {
         Self {
             name: name.into(),
             dofs: [Dof::default(); 3],
             world_transform: transform.clone(),
             local_transform: transform,
+            parent,
             children: Vec::new(),
         }
     }
@@ -59,7 +61,9 @@ impl Joint {
             Vec3::new(-k.z, 0.0, k.x),
             Vec3::new(k.y, -k.x, 0.0),
         );
-        Mat4::from_mat3(Mat3::IDENTITY + k_cross * theta.sin() + (k_cross * k_cross) * (1.0 - theta.cos()))
+        Mat4::from_mat3(
+            Mat3::IDENTITY + k_cross * theta.sin() + (k_cross * k_cross) * (1.0 - theta.cos()),
+        )
     }
 }
 
@@ -113,10 +117,7 @@ impl Skeleton {
     /// Helper function to add a joint to the skeleton
     pub fn add_joint(&mut self, name: &str, transform: Mat4, parent: Option<usize>) -> usize {
         let id = self.joints.len();
-        let joint = Joint::new(
-            name,
-            transform,
-        );
+        let joint = Joint::new(name, transform, parent);
         self.joints.push(joint);
 
         if let Some(parent_idx) = parent {
@@ -127,12 +128,7 @@ impl Skeleton {
 
     /// Helper function to add a bone to the skeleton
     pub fn add_bone(&mut self, name: &str, size: Vec3, transform: Mat4, parent: usize) {
-        let bone = Bone::new(
-            name,
-            size,
-            transform,
-            parent,
-        );
+        let bone = Bone::new(name, size, transform, parent);
         self.bones.push(bone);
     }
 
@@ -145,7 +141,7 @@ impl Skeleton {
         let mut two_link = Self::new("two_link");
         // Joint 1 at the world origin (0, 0, 0)
         let joint_1 = two_link.add_joint("joint 1", Mat4::IDENTITY, None);
-        
+
         // Link 1 (bone 1)
         two_link.add_bone(
             "bone1",
@@ -154,10 +150,10 @@ impl Skeleton {
                 vec4(1.0, 0.0, 0.0, 0.0),
                 vec4(0.0, 1.0, 0.0, 0.0),
                 vec4(0.0, 0.0, 1.0, 0.0),
-                vec4(0.0, 0.5, 0.0, 1.0),
+                vec4(0.0, 0.0, 0.0, 1.0),
             ),
             joint_1,
-        );  
+        );
 
         // Joint 2 between both links at (0, 1, 0)
         let joint_2 = two_link.add_joint(
@@ -169,7 +165,7 @@ impl Skeleton {
                 vec4(0.0, 1.0, 0.0, 1.0),
             ),
             Some(joint_1),
-        );    
+        );
 
         // Link 2 (bone 2)
         two_link.add_bone(
@@ -179,7 +175,7 @@ impl Skeleton {
                 vec4(1.0, 0.0, 0.0, 0.0),
                 vec4(0.0, 1.0, 0.0, 0.0),
                 vec4(0.0, 0.0, 1.0, 0.0),
-                vec4(0.0, 1.5, 0.0, 1.0),
+                vec4(0.0, 0.5, 0.0, 1.0),
             ),
             joint_2,
         );
@@ -223,12 +219,18 @@ impl Skeleton {
 /// Update joint and link transforms
 pub fn update_skeleton_transform(mut skeleton: ResMut<Skeleton>) {
     let skeleton = &mut *skeleton;
-    for joint in &mut skeleton.joints {
-        joint.world_transform = joint.local_transform * joint.rodrigues_rotation();
+    for i in 0..skeleton.joints.len() {
+        let joint = &skeleton.joints[i];
+        let mut world_transform = joint.local_transform * joint.rodrigues_rotation();
+        if let Some(parent) = joint.parent {
+            world_transform = &skeleton.joints[parent].world_transform * world_transform;
+        }
+        let joint = &mut skeleton.joints[i];
+        joint.world_transform = world_transform;
     }
 
     for bone in &mut skeleton.bones {
-        bone.world_transform = bone.local_transform * skeleton.joints[bone.parent].rodrigues_rotation();
+        bone.world_transform = &skeleton.joints[bone.parent].world_transform * bone.local_transform;
     }
 }
 
@@ -248,7 +250,6 @@ pub fn redraw_skeleton(
         *transform = Transform::from_matrix(skeleton.bones[bone_idx.0].world_transform);
     }
 }
-    
 
 /// Bevy system to draw coordinate axes for the skeleton resource every frame.
 pub fn draw_skeleton_axes(skeleton: Option<Res<Skeleton>>, mut gizmos: Gizmos) {
@@ -256,9 +257,21 @@ pub fn draw_skeleton_axes(skeleton: Option<Res<Skeleton>>, mut gizmos: Gizmos) {
         let length = 0.4;
         for joint in &skeleton.joints {
             let origin = joint.world_transform.transform_point3(Vec3::ZERO);
-            let x_dir = joint.world_transform.transform_vector3(Vec3::X).normalize_or_zero() * length;
-            let y_dir = joint.world_transform.transform_vector3(Vec3::Y).normalize_or_zero() * length;
-            let z_dir = joint.world_transform.transform_vector3(Vec3::Z).normalize_or_zero() * length;
+            let x_dir = joint
+                .world_transform
+                .transform_vector3(Vec3::X)
+                .normalize_or_zero()
+                * length;
+            let y_dir = joint
+                .world_transform
+                .transform_vector3(Vec3::Y)
+                .normalize_or_zero()
+                * length;
+            let z_dir = joint
+                .world_transform
+                .transform_vector3(Vec3::Z)
+                .normalize_or_zero()
+                * length;
 
             // X axis -> Red
             gizmos.arrow(origin, origin + x_dir, Color::srgb(1.0, 0.0, 0.0));
