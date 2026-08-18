@@ -183,6 +183,222 @@ impl Skeleton {
         two_link
     }
 
+    /// Builds a humanoid skeleton consisting of:
+    /// - 1 lower body (pelvis / root)
+    /// - 1 upper body (chest)
+    /// - 1 head
+    /// - 2 arms (left, right)
+    /// - 2 forearms (left, right)
+    /// - 2 hands (left, right)
+    /// - 2 legs (left, right)
+    /// - 2 forelegs (left, right)
+    /// - 2 feet (left, right)
+    /// All bones are cubes and parented hierarchically to their corresponding joints.
+    pub fn build_humanoid() -> Self {
+        let mut humanoid = Self::new("humanoid");
+
+        // 1. Lower Body (Root / Pelvis)
+        let lower_body_joint = humanoid.add_joint(
+            "lower_body",
+            Mat4::from_translation(Vec3::new(0.0, 1.0, 0.0)),
+            None,
+        );
+        humanoid.add_bone(
+            "lower_body",
+            Vec3::splat(0.35),
+            Mat4::IDENTITY,
+            lower_body_joint,
+        );
+
+        // 2. Upper Body (Chest / Spine)
+        let upper_body_joint = humanoid.add_joint(
+            "upper_body",
+            Mat4::from_translation(Vec3::new(0.0, 0.35, 0.0)),
+            Some(lower_body_joint),
+        );
+        humanoid.add_bone(
+            "upper_body",
+            Vec3::splat(0.42),
+            Mat4::from_translation(Vec3::new(0.0, 0.08, 0.0)),
+            upper_body_joint,
+        );
+
+        // 3. Head
+        let head_joint = humanoid.add_joint(
+            "head",
+            Mat4::from_translation(Vec3::new(0.0, 0.40, 0.0)),
+            Some(upper_body_joint),
+        );
+        humanoid.add_bone(
+            "head",
+            Vec3::splat(0.30),
+            Mat4::from_translation(Vec3::new(0.0, 0.18, 0.0)),
+            head_joint,
+        );
+
+        // --- Left Arm Chain ---
+        // 4. Left Arm (Shoulder)
+        let left_arm_joint = humanoid.add_joint(
+            "left_arm",
+            Mat4::from_translation(Vec3::new(0.32, 0.15, 0.0)),
+            Some(upper_body_joint),
+        );
+        humanoid.add_bone(
+            "left_arm",
+            Vec3::splat(0.20),
+            Mat4::from_translation(Vec3::new(0.12, 0.0, 0.0)),
+            left_arm_joint,
+        );
+
+        // 5. Left Forearm (Elbow)
+        let left_forearm_joint = humanoid.add_joint(
+            "left_forearm",
+            Mat4::from_translation(Vec3::new(0.24, 0.0, 0.0)),
+            Some(left_arm_joint),
+        );
+        humanoid.add_bone(
+            "left_forearm",
+            Vec3::splat(0.16),
+            Mat4::from_translation(Vec3::new(0.10, 0.0, 0.0)),
+            left_forearm_joint,
+        );
+
+        // 6. Left Hand (Wrist)
+        let left_hand_joint = humanoid.add_joint(
+            "left_hand",
+            Mat4::from_translation(Vec3::new(0.20, 0.0, 0.0)),
+            Some(left_forearm_joint),
+        );
+        humanoid.add_bone(
+            "left_hand",
+            Vec3::splat(0.12),
+            Mat4::from_translation(Vec3::new(0.08, 0.0, 0.0)),
+            left_hand_joint,
+        );
+
+        // --- Right Arm Chain ---
+        // 7. Right Arm (Shoulder)
+        let right_arm_joint = humanoid.add_joint(
+            "right_arm",
+            Mat4::from_translation(Vec3::new(-0.32, 0.15, 0.0)),
+            Some(upper_body_joint),
+        );
+        humanoid.add_bone(
+            "right_arm",
+            Vec3::splat(0.20),
+            Mat4::from_translation(Vec3::new(-0.12, 0.0, 0.0)),
+            right_arm_joint,
+        );
+
+        // 8. Right Forearm (Elbow)
+        let right_forearm_joint = humanoid.add_joint(
+            "right_forearm",
+            Mat4::from_translation(Vec3::new(-0.24, 0.0, 0.0)),
+            Some(right_arm_joint),
+        );
+        humanoid.add_bone(
+            "right_forearm",
+            Vec3::splat(0.16),
+            Mat4::from_translation(Vec3::new(-0.10, 0.0, 0.0)),
+            right_forearm_joint,
+        );
+
+        // 9. Right Hand (Wrist)
+        let right_hand_joint = humanoid.add_joint(
+            "right_hand",
+            Mat4::from_translation(Vec3::new(-0.20, 0.0, 0.0)),
+            Some(right_forearm_joint),
+        );
+        humanoid.add_bone(
+            "right_hand",
+            Vec3::splat(0.12),
+            Mat4::from_translation(Vec3::new(-0.08, 0.0, 0.0)),
+            right_hand_joint,
+        );
+
+        // --- Left Leg Chain ---
+        // 10. Left Leg (Hip)
+        let left_leg_joint = humanoid.add_joint(
+            "left_leg",
+            Mat4::from_translation(Vec3::new(0.16, -0.22, 0.0)),
+            Some(lower_body_joint),
+        );
+        humanoid.add_bone(
+            "left_leg",
+            Vec3::splat(0.22),
+            Mat4::from_translation(Vec3::new(0.0, -0.14, 0.0)),
+            left_leg_joint,
+        );
+
+        // 11. Left Foreleg (Knee)
+        let left_foreleg_joint = humanoid.add_joint(
+            "left_foreleg",
+            Mat4::from_translation(Vec3::new(0.0, -0.28, 0.0)),
+            Some(left_leg_joint),
+        );
+        humanoid.add_bone(
+            "left_foreleg",
+            Vec3::splat(0.18),
+            Mat4::from_translation(Vec3::new(0.0, -0.12, 0.0)),
+            left_foreleg_joint,
+        );
+
+        // 12. Left Foot (Ankle)
+        let left_foot_joint = humanoid.add_joint(
+            "left_foot",
+            Mat4::from_translation(Vec3::new(0.0, -0.24, 0.0)),
+            Some(left_foreleg_joint),
+        );
+        humanoid.add_bone(
+            "left_foot",
+            Vec3::splat(0.15),
+            Mat4::from_translation(Vec3::new(0.0, -0.06, 0.08)),
+            left_foot_joint,
+        );
+
+        // --- Right Leg Chain ---
+        // 13. Right Leg (Hip)
+        let right_leg_joint = humanoid.add_joint(
+            "right_leg",
+            Mat4::from_translation(Vec3::new(-0.16, -0.22, 0.0)),
+            Some(lower_body_joint),
+        );
+        humanoid.add_bone(
+            "right_leg",
+            Vec3::splat(0.22),
+            Mat4::from_translation(Vec3::new(0.0, -0.14, 0.0)),
+            right_leg_joint,
+        );
+
+        // 14. Right Foreleg (Knee)
+        let right_foreleg_joint = humanoid.add_joint(
+            "right_foreleg",
+            Mat4::from_translation(Vec3::new(0.0, -0.28, 0.0)),
+            Some(right_leg_joint),
+        );
+        humanoid.add_bone(
+            "right_foreleg",
+            Vec3::splat(0.18),
+            Mat4::from_translation(Vec3::new(0.0, -0.12, 0.0)),
+            right_foreleg_joint,
+        );
+
+        // 15. Right Foot (Ankle)
+        let right_foot_joint = humanoid.add_joint(
+            "right_foot",
+            Mat4::from_translation(Vec3::new(0.0, -0.24, 0.0)),
+            Some(right_foreleg_joint),
+        );
+        humanoid.add_bone(
+            "right_foot",
+            Vec3::splat(0.15),
+            Mat4::from_translation(Vec3::new(0.0, -0.06, 0.08)),
+            right_foot_joint,
+        );
+
+        humanoid
+    }
+
     /// Spawns the skeleton into the Bevy world by iterating through bones and joints
     /// Spawns each bone as a box mesh and each joint as a sphere mesh at its pivot position.
     pub fn spawn(
