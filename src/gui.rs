@@ -27,7 +27,7 @@ pub fn joint_inspector_ui(
         .default_open(true)
         .collapsible(true)
         .resizable(true)
-        .default_size([300.0, 400.0])
+        .default_size([340.0, 420.0])
         .show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.heading("Skeleton Joints");
@@ -47,8 +47,8 @@ pub fn joint_inspector_ui(
                                 ui.horizontal(|ui| {
                                     ui.label(*label);
                                     ui.add(
-                                        egui::DragValue::new(&mut joint.dofs[i].value)
-                                            .speed(0.01),
+                                        egui::Slider::new(&mut joint.dofs[i].value, 0.0..=360.0)
+                                            .suffix("°"),
                                     );
                                 });
                             }

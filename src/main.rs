@@ -4,7 +4,7 @@ use bevy::window::CursorGrabMode;
 mod gui;
 mod skeleton;
 use gui::SimGuiPlugin;
-use skeleton::{draw_skeleton_axes, Skeleton};
+use skeleton::{draw_skeleton_axes, redraw_skeleton, update_skeleton_transform, Skeleton};
 
 fn main() {
     App::new()
@@ -28,7 +28,15 @@ pub struct SetupWorldPlugin;
 impl Plugin for SetupWorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, (setup_environment, setup_skeleton, setup_cursor))
-            .add_systems(Update, draw_skeleton_axes);
+            .add_systems(
+                Update,
+                (
+                    update_skeleton_transform,
+                    redraw_skeleton,
+                    draw_skeleton_axes,
+                )
+                    .chain(),
+            );
     }
 }
 

@@ -19,7 +19,8 @@ impl Dof {
 pub struct Joint {
     pub name: String,
     pub dofs: [Dof; 3],
-    pub transform: Mat4,
+    pub world_transform: Mat4,
+    pub local_transform: Mat4,
     pub children: Vec<usize>,               // idx in skeleton.joints of its children
 }
 
@@ -28,7 +29,8 @@ impl Joint {
         Self {
             name: name.into(),
             dofs: [Dof::default(); 3],
-            transform,
+            world_transform: transform.clone(),
+            local_transform: transform,
             children: Vec::new(),
         }
     }
@@ -37,6 +39,28 @@ impl Joint {
         self.dofs = [Dof::new(rx), Dof::new(ry), Dof::new(rz)];
         self
     }
+
+    /// Computes the Rodrigues rotation matrix assuming DOF values are in degrees.
+    /// R = I + sin(θ) K + (1 - cos(θ)) K²
+    /// where ω = (dof_x, dof_y, dof_z), θ = ||ω|| (in radians), and K is the skew-symmetric matrix of ω / θ.
+    pub fn rodrigues_rotation(&self) -> Mat4 {
+        let omega = Vec3::new(
+            self.dofs[0].value.to_radians(),
+            self.dofs[1].value.to_radians(),
+            self.dofs[2].value.to_radians(),
+        );
+        let theta = omega.length();
+        if theta < 1e-6 {
+            return Mat4::IDENTITY;
+        }
+        let k = omega / theta;
+        let k_cross = Mat3::from_cols(
+            Vec3::new(0.0, k.z, -k.y),
+            Vec3::new(-k.z, 0.0, k.x),
+            Vec3::new(k.y, -k.x, 0.0),
+        );
+        Mat4::from_mat3(Mat3::IDENTITY + k_cross * theta.sin() + (k_cross * k_cross) * (1.0 - theta.cos()))
+    }
 }
 
 /// A rigid body segment (bone) represented as a simple 3D box.
@@ -44,7 +68,8 @@ impl Joint {
 pub struct Bone {
     pub name: String,
     pub size: Vec3,
-    pub transform: Mat4,
+    pub world_transform: Mat4,
+    pub local_transform: Mat4,
     pub parent: usize,
 }
 
@@ -53,11 +78,20 @@ impl Bone {
         Self {
             name: name.into(),
             size,
-            transform,
+            world_transform: transform.clone(),
+            local_transform: transform,
             parent,
         }
     }
 }
+
+/// Marker component storing the index into `skeleton.joints`
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct JointIndex(pub usize);
+
+/// Marker component storing the index into `skeleton.bones`
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct BoneIndex(pub usize);
 
 /// Complete skeleton tree structure.
 #[derive(Debug, Clone, Resource)]
@@ -164,44 +198,67 @@ impl Skeleton {
     ) {
         let sphere_mesh = meshes.add(Sphere::new(0.15));
         // spawn spheres for joints
-        for joint in &self.joints {
+        for (i, joint) in self.joints.iter().enumerate() {
             commands.spawn((
+                JointIndex(i),
                 Name::new(joint.name.clone()),
                 Mesh3d(sphere_mesh.clone()),
                 MeshMaterial3d(joint_material.clone()),
-                Transform::from_matrix(joint.transform),
+                Transform::from_matrix(joint.world_transform),
             ));
         }
-        // spawn boxes for joints
-        for bone in &self.bones {
+        // spawn boxes for bones
+        for (i, bone) in self.bones.iter().enumerate() {
             commands.spawn((
+                BoneIndex(i),
                 Name::new(bone.name.clone()),
                 Mesh3d(meshes.add(Cuboid::from_size(bone.size))),
                 MeshMaterial3d(bone_material.clone()),
-                Transform::from_matrix(bone.transform),
+                Transform::from_matrix(bone.world_transform),
             ));
         }
     }
 }
 
-/// Update skeleton transform
-pub fn update_skeleton_transform(skeleton: Option<Res<Skeleton>>) {
-    todo!()
+/// Update joint and link transforms
+pub fn update_skeleton_transform(mut skeleton: ResMut<Skeleton>) {
+    let skeleton = &mut *skeleton;
+    for joint in &mut skeleton.joints {
+        joint.world_transform = joint.local_transform * joint.rodrigues_rotation();
+    }
+
+    for bone in &mut skeleton.bones {
+        bone.world_transform = bone.local_transform * skeleton.joints[bone.parent].rodrigues_rotation();
+    }
 }
 
-pub fn redraw_skeleton(skeleton: Option<Res<Skeleton>>) {
-    todo!()
-}    
+/// Redraws the skeleton entities in the scene by syncing their Transforms via O(1) index lookups
+pub fn redraw_skeleton(
+    skeleton: Option<Res<Skeleton>>,
+    mut joints_query: Query<(&JointIndex, &mut Transform)>,
+    mut bones_query: Query<(&BoneIndex, &mut Transform), Without<JointIndex>>,
+) {
+    let Some(skeleton) = skeleton else { return };
+
+    for (joint_idx, mut transform) in &mut joints_query {
+        *transform = Transform::from_matrix(skeleton.joints[joint_idx.0].world_transform);
+    }
+
+    for (bone_idx, mut transform) in &mut bones_query {
+        *transform = Transform::from_matrix(skeleton.bones[bone_idx.0].world_transform);
+    }
+}
+    
 
 /// Bevy system to draw coordinate axes for the skeleton resource every frame.
 pub fn draw_skeleton_axes(skeleton: Option<Res<Skeleton>>, mut gizmos: Gizmos) {
     if let Some(skeleton) = skeleton {
         let length = 0.4;
         for joint in &skeleton.joints {
-            let origin = joint.transform.transform_point3(Vec3::ZERO);
-            let x_dir = joint.transform.transform_vector3(Vec3::X).normalize_or_zero() * length;
-            let y_dir = joint.transform.transform_vector3(Vec3::Y).normalize_or_zero() * length;
-            let z_dir = joint.transform.transform_vector3(Vec3::Z).normalize_or_zero() * length;
+            let origin = joint.world_transform.transform_point3(Vec3::ZERO);
+            let x_dir = joint.world_transform.transform_vector3(Vec3::X).normalize_or_zero() * length;
+            let y_dir = joint.world_transform.transform_vector3(Vec3::Y).normalize_or_zero() * length;
+            let z_dir = joint.world_transform.transform_vector3(Vec3::Z).normalize_or_zero() * length;
 
             // X axis -> Red
             gizmos.arrow(origin, origin + x_dir, Color::srgb(1.0, 0.0, 0.0));
