@@ -1,13 +1,15 @@
 use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll};
 use bevy::prelude::*;
 use bevy::window::CursorGrabMode;
+mod gui;
 mod skeleton;
+use gui::SimGuiPlugin;
 use skeleton::{draw_skeleton_axes, Skeleton};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins((SetupWorldPlugin, HandleInputPlugin))
+        .add_plugins((SetupWorldPlugin, HandleInputPlugin, SimGuiPlugin))
         .run();
 }
 

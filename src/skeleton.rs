@@ -184,6 +184,15 @@ impl Skeleton {
     }
 }
 
+/// Update skeleton transform
+pub fn update_skeleton_transform(skeleton: Option<Res<Skeleton>>) {
+    todo!()
+}
+
+pub fn redraw_skeleton(skeleton: Option<Res<Skeleton>>) {
+    todo!()
+}    
+
 /// Bevy system to draw coordinate axes for the skeleton resource every frame.
 pub fn draw_skeleton_axes(skeleton: Option<Res<Skeleton>>, mut gizmos: Gizmos) {
     if let Some(skeleton) = skeleton {
