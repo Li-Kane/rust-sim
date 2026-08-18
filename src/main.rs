@@ -1,6 +1,8 @@
 use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll};
 use bevy::prelude::*;
 use bevy::window::CursorGrabMode;
+mod skeleton;
+use skeleton::{draw_skeleton_axes, Skeleton};
 
 fn main() {
     App::new()
@@ -23,7 +25,8 @@ pub struct SetupWorldPlugin;
 
 impl Plugin for SetupWorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (scene.spawn(), setup_cursor));
+        app.add_systems(Startup, (setup_environment, setup_skeleton, setup_cursor))
+            .add_systems(Update, draw_skeleton_axes);
     }
 }
 
@@ -32,26 +35,40 @@ fn setup_cursor(mut cursor_options: Single<&mut bevy::window::CursorOptions>) {
     cursor_options.visible = false;
 }
 
-/// set up a simple 3D scene
-fn scene() -> impl SceneList {
-    bsn_list! [
-        (
-            #Cube
-            Mesh3d(asset_value(Cuboid::new(1.0, 1.0, 1.0)))
-            MeshMaterial3d::<StandardMaterial>(asset_value(Color::srgb_u8(124, 144, 255)))
-            Transform::from_xyz(0.0, 0.5, 0.0)
-        ),
-        (
-            PointLight {
-                shadow_maps_enabled: true,
-            }
-            Transform::from_xyz(4.0, 8.0, 4.0)
-        ),
-        (
-            Camera3d
-            template_value(Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y))
-        )
-    ]
+fn setup_environment(mut commands: Commands) {
+    // Point light
+    commands.spawn((
+        PointLight {
+            shadow_maps_enabled: true,
+            ..default()
+        },
+        Transform::from_xyz(4.0, 8.0, 4.0),
+    ));
+
+    // Camera facing the model
+    commands.spawn((
+        Camera3d::default(),
+        Transform::from_xyz(0.0, 1.8, 4.0).looking_at(Vec3::new(0.0, 1.0, 0.0), Vec3::Y),
+    ));
+}
+
+fn setup_skeleton(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let mut skeleton = Skeleton::build_two_link();
+    let bone_material = materials.add(StandardMaterial {
+        base_color: Color::srgb_u8(124, 144, 255),
+        ..default()
+    });
+    let joint_material = materials.add(StandardMaterial {
+        base_color: Color::srgb_u8(250, 204, 21), // Yellow
+        ..default()
+    });
+
+    skeleton.spawn(&mut commands, &mut meshes, bone_material, joint_material);
+    commands.insert_resource(skeleton);
 }
 
 // ----------------------------------------------------------------------------
