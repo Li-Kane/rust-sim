@@ -8,7 +8,16 @@ use skeleton::{Skeleton, draw_gridlines, redraw_skeleton, update_skeleton_transf
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                title: "Rust Sim".into(),
+                canvas: Some("#bevy-canvas".into()),
+                fit_canvas_to_parent: true,
+                prevent_default_event_handling: true,
+                ..default()
+            }),
+            ..default()
+        }))
         .add_plugins((SetupWorldPlugin, HandleInputPlugin, SimGuiPlugin))
         .run();
 }
