@@ -408,7 +408,7 @@ impl Skeleton {
         bone_material: Handle<StandardMaterial>,
         joint_material: Handle<StandardMaterial>,
     ) {
-        let sphere_mesh = meshes.add(Sphere::new(0.15));
+        let sphere_mesh = meshes.add(Sphere::new(0.0));
         // spawn spheres for joints
         for (i, joint) in self.joints.iter().enumerate() {
             commands.spawn((
@@ -497,4 +497,82 @@ pub fn draw_skeleton_axes(skeleton: Option<Res<Skeleton>>, mut gizmos: Gizmos) {
             gizmos.arrow(origin, origin + z_dir, Color::srgb(0.0, 0.0, 1.0));
         }
     }
+}
+
+/// Bevy system to draw coordinate axes for the skeleton bones every frame.
+pub fn draw_bone_axes(skeleton: Option<Res<Skeleton>>, mut gizmos: Gizmos) {
+    if let Some(skeleton) = skeleton {
+        let length = 2.0;
+        for bone in &skeleton.bones {
+            let origin = bone.world_transform.transform_point3(Vec3::ZERO);
+            let x_dir = bone
+                .world_transform
+                .transform_vector3(Vec3::X)
+                .normalize_or_zero()
+                * length;
+            let y_dir = bone
+                .world_transform
+                .transform_vector3(Vec3::Y)
+                .normalize_or_zero()
+                * length;
+            let z_dir = bone
+                .world_transform
+                .transform_vector3(Vec3::Z)
+                .normalize_or_zero()
+                * length;
+
+            // X axis -> Red
+            gizmos.arrow(origin, origin + x_dir, Color::srgb(1.0, 0.0, 0.0));
+            // Y axis -> Green
+            gizmos.arrow(origin, origin + y_dir, Color::srgb(0.0, 1.0, 0.0));
+            // Z axis -> Blue
+            gizmos.arrow(origin, origin + z_dir, Color::srgb(0.0, 0.0, 1.0));
+        }
+    }
+}
+
+pub const WORLD_AXES_LENGTH: f32 = 2.0;
+
+/// Bevy system to draw ground plane gridlines and world coordinate axes with gizmos.
+pub fn draw_gridlines(mut gizmos: Gizmos) {
+    let half_size = 100;
+    let step = 1.0;
+    let grid_color = Color::srgba(0.35, 0.35, 0.35, 0.5);
+
+    for i in -half_size..=half_size {
+        let coord = i as f32 * step;
+        let limit = half_size as f32 * step;
+
+        gizmos.line(
+            Vec3::new(coord, 0.0, -limit),
+            Vec3::new(coord, 0.0, limit),
+            grid_color,
+        );
+        gizmos.line(
+            Vec3::new(-limit, 0.0, coord),
+            Vec3::new(limit, 0.0, coord),
+            grid_color,
+        );
+    }
+
+    // Draw world X, Y, Z axes at the origin
+    let origin = Vec3::ZERO;
+    // X axis -> Red
+    gizmos.arrow(
+        origin,
+        origin + Vec3::X * WORLD_AXES_LENGTH,
+        Color::srgb(1.0, 0.0, 0.0),
+    );
+    // Y axis -> Green
+    gizmos.arrow(
+        origin,
+        origin + Vec3::Y * WORLD_AXES_LENGTH,
+        Color::srgb(0.0, 1.0, 0.0),
+    );
+    // Z axis -> Blue
+    gizmos.arrow(
+        origin,
+        origin + Vec3::Z * WORLD_AXES_LENGTH,
+        Color::srgb(0.0, 0.0, 1.0),
+    );
 }

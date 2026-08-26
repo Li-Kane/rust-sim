@@ -4,7 +4,7 @@ use bevy::window::CursorGrabMode;
 mod gui;
 mod skeleton;
 use gui::SimGuiPlugin;
-use skeleton::{Skeleton, draw_skeleton_axes, redraw_skeleton, update_skeleton_transform};
+use skeleton::{Skeleton, draw_gridlines, redraw_skeleton, update_skeleton_transform};
 
 fn main() {
     App::new()
@@ -28,7 +28,10 @@ pub struct SetupWorldPlugin;
 impl Plugin for SetupWorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, (setup_environment, setup_skeleton, setup_cursor))
-            .add_systems(Update, (update_skeleton_transform, redraw_skeleton).chain());
+            .add_systems(
+                Update,
+                (update_skeleton_transform, redraw_skeleton, draw_gridlines).chain(),
+            );
     }
 }
 
@@ -60,6 +63,7 @@ fn setup_skeleton(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let mut skeleton = Skeleton::build_humanoid();
+    // let mut skeleton = Skeleton::build_humanoid();
     let bone_material = materials.add(StandardMaterial {
         base_color: Color::srgb(0.25, 0.5, 0.95), // Blue cubes
         ..default()
