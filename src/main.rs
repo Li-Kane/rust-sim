@@ -3,13 +3,15 @@ use bevy::prelude::*;
 mod environment;
 mod gui;
 mod input;
+mod physics;
 mod robot;
 
-pub use input::SimState;
+pub use input::{CameraSettings, SimState};
 
 use environment::EnvironmentPlugin;
 use gui::SimGuiPlugin;
 use input::HandleInputPlugin;
+use physics::PhysicsPlugin;
 use robot::RobotPlugin;
 
 fn main() {
@@ -27,6 +29,7 @@ fn main() {
         .add_plugins((
             EnvironmentPlugin,
             RobotPlugin,
+            PhysicsPlugin,
             HandleInputPlugin,
             SimGuiPlugin,
         ))

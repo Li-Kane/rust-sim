@@ -11,7 +11,25 @@ impl Plugin for EnvironmentPlugin {
     }
 }
 
-pub fn setup_environment(mut commands: Commands) {
+pub fn setup_environment(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    // 3D Solid Ground Plane (top surface at y = 0.0)
+    let ground_mesh = meshes.add(Cuboid::new(50.0, 0.2, 50.0));
+    let ground_material = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.05, 0.08, 0.25),
+        metallic: 0.1,
+        perceptual_roughness: 0.8,
+        ..default()
+    });
+    commands.spawn((
+        Mesh3d(ground_mesh),
+        MeshMaterial3d(ground_material),
+        Transform::from_xyz(0.0, -0.1, 0.0),
+    ));
+
     // Primary Directional light (Key light)
     commands.spawn((
         DirectionalLight {
@@ -44,25 +62,26 @@ pub fn draw_gridlines(mut gizmos: Gizmos) {
     let half_size = 50;
     let step = 1.0;
     let grid_color = Color::srgba(0.35, 0.35, 0.35, 0.5);
+    let floor_y = 0.002;
 
     for i in -half_size..=half_size {
         let coord = i as f32 * step;
         let limit = half_size as f32 * step;
 
         gizmos.line(
-            Vec3::new(coord, 0.0, -limit),
-            Vec3::new(coord, 0.0, limit),
+            Vec3::new(coord, floor_y, -limit),
+            Vec3::new(coord, floor_y, limit),
             grid_color,
         );
         gizmos.line(
-            Vec3::new(-limit, 0.0, coord),
-            Vec3::new(limit, 0.0, coord),
+            Vec3::new(-limit, floor_y, coord),
+            Vec3::new(limit, floor_y, coord),
             grid_color,
         );
     }
 
     // World X, Y, Z axes
-    let origin = Vec3::ZERO;
+    let origin = Vec3::new(0.0, floor_y, 0.0);
     gizmos.arrow(origin, origin + Vec3::X * WORLD_AXES_LENGTH, Color::srgb(1.0, 0.0, 0.0));
     gizmos.arrow(origin, origin + Vec3::Y * WORLD_AXES_LENGTH, Color::srgb(0.0, 1.0, 0.0));
     gizmos.arrow(origin, origin + Vec3::Z * WORLD_AXES_LENGTH, Color::srgb(0.0, 0.0, 1.0));

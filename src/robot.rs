@@ -6,10 +6,10 @@ use std::collections::HashMap;
 
 /// Embedded URDF and OBJ asset bytes for zero-friction cross-platform & WASM support
 pub const URDF_CONTENT: &str = include_str!("assets/spot_simple.urdf");
-pub const BODY_OBJ: &[u8] = include_bytes!("assets/meshes/base_simple/visual/body.obj");
-pub const HIP_OBJ: &[u8] = include_bytes!("assets/meshes/base_simple/visual/hip.obj");
-pub const ULEG_OBJ: &[u8] = include_bytes!("assets/meshes/base_simple/visual/uleg.obj");
-pub const LLEG_OBJ: &[u8] = include_bytes!("assets/meshes/base_simple/visual/lleg.obj");
+pub const BODY_OBJ: &[u8] = include_bytes!("assets/meshes/body.obj");
+pub const HIP_OBJ: &[u8] = include_bytes!("assets/meshes/hip.obj");
+pub const ULEG_OBJ: &[u8] = include_bytes!("assets/meshes/uleg.obj");
+pub const LLEG_OBJ: &[u8] = include_bytes!("assets/meshes/lleg.obj");
 
 /// Default standing joint positions for Spot (in radians)
 pub const DEFAULT_JOINT_ANGLES: [(&str, f32); 12] = [
@@ -26,6 +26,15 @@ pub const DEFAULT_JOINT_ANGLES: [(&str, f32); 12] = [
     ("hr_hy", 1.1),
     ("hr_kn", -1.5),
 ];
+
+/// Returns the coordinate conversion rotation from URDF (Z-up, X-fwd, Y-left) to Bevy (Y-up, -Z-fwd, +X-right)
+pub fn urdf_to_bevy_orientation() -> Quat {
+    Quat::from_mat3(&Mat3::from_cols(
+        Vec3::new(0.0, 0.0, -1.0),
+        Vec3::new(-1.0, 0.0, 0.0),
+        Vec3::new(0.0, 1.0, 0.0),
+    ))
+}
 
 /// Helper to parse OBJ mesh bytes into a Bevy Mesh
 pub fn parse_obj_mesh(bytes: &[u8]) -> Result<Mesh, String> {
@@ -130,6 +139,16 @@ impl RobotModel {
             }
         }
         self.update_kinematics();
+    }
+
+    /// Resets full robot state (default pose + center drop transform)
+    pub fn reset_full(&mut self) {
+        self.root_transform = Transform {
+            translation: Vec3::new(0.0, 0.65, 0.0),
+            rotation: urdf_to_bevy_orientation(),
+            scale: Vec3::ONE,
+        };
+        self.reset_to_default_pose();
     }
 
     /// Computes hierarchical forward kinematics for all links
@@ -282,16 +301,11 @@ pub fn load_spot_model() -> Result<RobotModel, String> {
         .unwrap_or(&0);
 
     // Coordinate conversion from URDF (Z-up, X-fwd, Y-left) to Bevy (Y-up, -Z-fwd, +X-right)
-    // Rotation matrix: X_bevy = -Y_urdf, Y_bevy = Z_urdf, Z_bevy = -X_urdf
-    let urdf_to_bevy_rot = Quat::from_mat3(&Mat3::from_cols(
-        Vec3::new(0.0, 0.0, -1.0),
-        Vec3::new(-1.0, 0.0, 0.0),
-        Vec3::new(0.0, 1.0, 0.0),
-    ));
+    let urdf_to_bevy_rot = urdf_to_bevy_orientation();
 
-    // Place robot body at height 0.55m so its feet touch the grid y=0 plane
+    // Place robot body at height 0.65m drop height
     let root_transform = Transform {
-        translation: Vec3::new(0.0, 0.55, 0.0),
+        translation: Vec3::new(0.0, 0.65, 0.0),
         rotation: urdf_to_bevy_rot,
         scale: Vec3::ONE,
     };

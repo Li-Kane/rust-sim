@@ -9,11 +9,23 @@ pub enum SimState {
     Config,
 }
 
+#[derive(Resource, Debug, Clone)]
+pub struct CameraSettings {
+    pub fly_speed: f32,
+}
+
+impl Default for CameraSettings {
+    fn default() -> Self {
+        Self { fly_speed: 4.0 }
+    }
+}
+
 pub struct HandleInputPlugin;
 
 impl Plugin for HandleInputPlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<SimState>()
+            .init_resource::<CameraSettings>()
             .add_systems(Startup, setup_cursor)
             .add_systems(
                 Update,
@@ -60,6 +72,7 @@ fn move_camera_system(
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse_motion: Res<AccumulatedMouseMotion>,
     mouse_scroll: Res<AccumulatedMouseScroll>,
+    camera_settings: Res<CameraSettings>,
     mut query: Query<&mut Transform, With<Camera3d>>,
 ) {
     for mut transform in &mut query {
@@ -82,7 +95,7 @@ fn move_camera_system(
         }
 
         // 3. Keyboard Movement (Camera-relative directions)
-        let speed = 5.0 * time.delta_secs();
+        let speed = camera_settings.fly_speed * time.delta_secs();
         let forward = transform.forward();
         let right = transform.right();
 
