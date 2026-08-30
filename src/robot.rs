@@ -96,10 +96,14 @@ pub struct RobotJoint {
     pub child_link: usize,
     pub origin_transform: Transform,
     pub axis: Vec3,
-    pub angle: f32,         // in radians
-    pub default_angle: f32, // in radians
-    pub lower_limit: f32,   // in radians
-    pub upper_limit: f32,   // in radians
+    pub angle: f32,          // Current angle in radians
+    pub velocity: f32,       // Current angular velocity in rad/s
+    pub desired_angle: f32,  // PD setpoint in radians
+    pub default_angle: f32,  // in radians
+    pub lower_limit: f32,    // in radians
+    pub upper_limit: f32,    // in radians
+    pub max_effort: f32,     // Max actuator effort in Nm
+    pub inertia: f32,        // Apparent joint inertia in kg*m^2
 }
 
 /// A rigid link in the robot tree
@@ -131,11 +135,14 @@ pub struct RobotModel {
 }
 
 impl RobotModel {
-    /// Resets all 12 joint angles to Spot's default standing pose
+    /// Resets all 12 joint angles to Spot's default standing pose and clears velocities
     pub fn reset_to_default_pose(&mut self) {
         for (name, angle) in DEFAULT_JOINT_ANGLES {
             if let Some(&idx) = self.joint_name_to_idx.get(name) {
                 self.joints[idx].angle = angle;
+                self.joints[idx].default_angle = angle;
+                self.joints[idx].desired_angle = angle;
+                self.joints[idx].velocity = 0.0;
             }
         }
         self.update_kinematics();
@@ -276,6 +283,20 @@ pub fn load_spot_model() -> Result<RobotModel, String> {
         let lower_limit = joint.limit.lower as f32;
         let upper_limit = joint.limit.upper as f32;
 
+        let max_effort = if joint.name.contains("kn") {
+            115.0
+        } else {
+            45.0
+        };
+
+        let inertia = if joint.name.contains("kn") {
+            0.04
+        } else if joint.name.contains("hy") {
+            0.08
+        } else {
+            0.12
+        };
+
         let joint_idx = joints.len();
         joint_name_to_idx.insert(joint.name.clone(), joint_idx);
 
@@ -286,9 +307,13 @@ pub fn load_spot_model() -> Result<RobotModel, String> {
             origin_transform,
             axis,
             angle: 0.0,
+            velocity: 0.0,
+            desired_angle: 0.0,
             default_angle: 0.0,
             lower_limit,
             upper_limit,
+            max_effort,
+            inertia,
         });
 
         links[parent_link].child_joints.push(joint_idx);

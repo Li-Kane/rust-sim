@@ -3,7 +3,7 @@ use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
 
 use crate::SimState;
 use crate::input::CameraSettings;
-use crate::physics::PhysicsRigidBody;
+use crate::physics::{PhysicsRigidBody, PhysicsSettings};
 use crate::robot::RobotModel;
 
 pub struct SimGuiPlugin;
@@ -22,10 +22,12 @@ pub fn joint_inspector_ui(
     robot: Option<ResMut<RobotModel>>,
     rb: Option<ResMut<PhysicsRigidBody>>,
     camera_settings: Option<ResMut<CameraSettings>>,
+    physics_settings: Option<ResMut<PhysicsSettings>>,
 ) {
     let Ok(ctx) = contexts.ctx_mut() else { return };
     let Some(mut robot) = robot else { return };
     let mut rb = rb;
+    let mut physics_settings = physics_settings;
 
     egui::Window::new("Spot Robot Configuration")
         .default_open(true)
@@ -44,6 +46,9 @@ pub fn joint_inspector_ui(
                         if let Some(ref mut rb_state) = rb {
                             rb_state.reset_velocities();
                         }
+                    }
+                    if let Some(ref mut phys) = physics_settings {
+                        ui.checkbox(&mut phys.show_colliders, "Show Collision Shapes");
                     }
                 });
 
@@ -83,7 +88,10 @@ pub fn joint_inspector_ui(
                                     )
                                     .changed()
                                 {
-                                    joint.angle = deg.to_radians();
+                                    let rad = deg.to_radians();
+                                    joint.angle = rad;
+                                    joint.desired_angle = rad;
+                                    joint.velocity = 0.0;
                                 }
                             });
                         }
