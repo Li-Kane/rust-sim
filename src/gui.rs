@@ -1,61 +1,95 @@
 use bevy::prelude::*;
-use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
+use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
 
-use crate::skeleton::Skeleton;
 use crate::SimState;
+use crate::robot::RobotModel;
 
 pub struct SimGuiPlugin;
 
 impl Plugin for SimGuiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(EguiPlugin::default())
-            .add_systems(
-                EguiPrimaryContextPass,
-                joint_inspector_ui.run_if(in_state(SimState::Paused)),
-            );
+        app.add_plugins(EguiPlugin::default()).add_systems(
+            EguiPrimaryContextPass,
+            joint_inspector_ui.run_if(in_state(SimState::Config)),
+        );
     }
 }
 
-pub fn joint_inspector_ui(
-    mut contexts: EguiContexts,
-    skeleton: Option<ResMut<Skeleton>>,
-) {
+pub fn joint_inspector_ui(mut contexts: EguiContexts, robot: Option<ResMut<RobotModel>>) {
     let Ok(ctx) = contexts.ctx_mut() else { return };
-    let Some(mut skeleton) = skeleton else { return };
+    let Some(mut robot) = robot else { return };
 
-    egui::Window::new("Joint Inspector")
+    egui::Window::new("Spot Robot Configuration")
         .default_open(true)
         .collapsible(true)
         .resizable(true)
-        .default_size([340.0, 420.0])
+        .default_size([380.0, 520.0])
         .show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
-                ui.heading("Skeleton Joints");
+                ui.heading("Robot Joint Controls");
+                ui.label("Press ESC to toggle camera controls.");
                 ui.separator();
 
-                if skeleton.joints.is_empty() {
-                    ui.label("No joints available.");
-                    return;
+                if ui.button("Default Standing Pose").clicked() {
+                    robot.reset_to_default_pose();
                 }
 
-                for joint in &mut skeleton.joints {
-                    ui.group(|ui| {
-                        ui.label(egui::RichText::new(&joint.name).strong());
-                        ui.indent(&joint.name, |ui| {
-                            let dof_labels = ["dof x:", "dof y:", "dof z:"];
-                            for (i, label) in dof_labels.iter().enumerate() {
-                                ui.horizontal(|ui| {
-                                    ui.label(*label);
-                                    ui.add(
-                                        egui::Slider::new(&mut joint.dofs[i].value, 0.0..=360.0)
-                                            .suffix("°"),
-                                    );
-                                });
+                ui.add_space(8.0);
+                ui.heading("Joints");
+
+                for joint in &mut robot.joints {
+                    // Only show movable joints (where limits allow movement)
+                    if joint.lower_limit < joint.upper_limit {
+                        let mut deg = joint.angle.to_degrees();
+                        let min_deg = joint.lower_limit.to_degrees();
+                        let max_deg = joint.upper_limit.to_degrees();
+
+                        ui.horizontal(|ui| {
+                            ui.label(egui::RichText::new(&joint.name).strong());
+                            if ui
+                                .add(
+                                    egui::Slider::new(&mut deg, min_deg..=max_deg)
+                                        .suffix("°")
+                                        .fixed_decimals(1),
+                                )
+                                .changed()
+                            {
+                                joint.angle = deg.to_radians();
                             }
                         });
-                    });
-                    ui.add_space(4.0);
+                    }
                 }
+
+                ui.add_space(10.0);
+                ui.separator();
+                ui.collapsing("Base Root Transform", |ui| {
+                    ui.label("World position of the robot base:");
+                    let mut pos = robot.root_transform.translation;
+                    let mut changed = false;
+
+                    ui.horizontal(|ui| {
+                        ui.label("X (m):");
+                        changed |= ui
+                            .add(egui::Slider::new(&mut pos.x, -5.0..=5.0).fixed_decimals(2))
+                            .changed();
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Y Height (m):");
+                        changed |= ui
+                            .add(egui::Slider::new(&mut pos.y, 0.0..=3.0).fixed_decimals(2))
+                            .changed();
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Z (m):");
+                        changed |= ui
+                            .add(egui::Slider::new(&mut pos.z, -5.0..=5.0).fixed_decimals(2))
+                            .changed();
+                    });
+
+                    if changed {
+                        robot.root_transform.translation = pos;
+                    }
+                });
             });
         });
 }
