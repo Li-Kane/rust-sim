@@ -29,14 +29,13 @@ pub fn joint_inspector_ui(
     let mut rb = rb;
     let mut physics_settings = physics_settings;
 
-    egui::Window::new("Spot Robot Configuration")
+    egui::Window::new("Sim Configuration")
         .default_open(true)
         .collapsible(true)
         .resizable(true)
         .default_size([400.0, 560.0])
         .show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
-                ui.heading("Sim Config");
                 ui.label("Press ESC to resume physics & camera controls.");
                 ui.separator();
 
