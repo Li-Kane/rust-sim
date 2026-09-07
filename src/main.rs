@@ -25,11 +25,6 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins((
-            ScenePlugin,
-            PhysicsPlugin,
-            HandleInputPlugin,
-            SimGuiPlugin,
-        ))
+        .add_plugins((ScenePlugin, PhysicsPlugin, HandleInputPlugin, SimGuiPlugin))
         .run();
 }

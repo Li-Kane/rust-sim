@@ -84,22 +84,6 @@ pub fn sim_ui(
                                 }
                             });
 
-                            ui.horizontal(|ui| {
-                                ui.label("Presets:");
-                                for &preset in &[0.25, 0.5, 1.0, 1.5, 2.0] {
-                                    if ui
-                                        .selectable_label(
-                                            (speed - preset).abs() < 0.01,
-                                            format!("{preset}x"),
-                                        )
-                                        .clicked()
-                                    {
-                                        speed = preset;
-                                        changed = true;
-                                    }
-                                }
-                            });
-
                             if changed {
                                 sim_speed.speed = speed;
                                 update_sim_speed(speed, &mut timestep_mode, &mut virtual_time);
@@ -132,6 +116,7 @@ fn update_sim_speed(
     timestep_mode: &mut Option<ResMut<TimestepMode>>,
     virtual_time: &mut Option<ResMut<Time<Virtual>>>,
 ) {
+    // update physics speed
     if let Some(mode) = timestep_mode {
         match mode.as_mut() {
             TimestepMode::Fixed { dt, substeps } => {
@@ -146,6 +131,7 @@ fn update_sim_speed(
             }
         }
     }
+    // update bevy's internal time resource
     if let Some(time) = virtual_time {
         time.set_relative_speed(speed);
     }
