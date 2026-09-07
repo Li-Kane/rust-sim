@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_rapier3d::prelude::*;
 
 pub const WORLD_AXES_LENGTH: f32 = 2.0;
 
@@ -28,6 +29,10 @@ pub fn setup_environment(
         Mesh3d(ground_mesh),
         MeshMaterial3d(ground_material),
         Transform::from_xyz(0.0, -0.1, 0.0),
+        RigidBody::Fixed,
+        Collider::cuboid(25.0, 0.1, 25.0),
+        Friction::coefficient(1.0),
+        Restitution::coefficient(0.0),
     ));
 
     // Primary Directional light (Key light)

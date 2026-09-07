@@ -42,18 +42,39 @@ pub fn load_spot_model() -> Result<RobotModel, String> {
                 }
             }
 
-            if let Some(mat) = &visual.material {
-                if let Some(col) = &mat.color {
-                    let rgba = col.rgba;
-                    color = Color::srgba(
-                        rgba[0] as f32,
-                        rgba[1] as f32,
-                        rgba[2] as f32,
-                        rgba[3] as f32,
-                    );
-                }
+            if let Some(mat) = &visual.material
+                && let Some(col) = &mat.color
+            {
+                let rgba = col.rgba;
+                color = Color::srgba(
+                    rgba[0] as f32,
+                    rgba[1] as f32,
+                    rgba[2] as f32,
+                    rgba[3] as f32,
+                );
             }
         }
+
+        let (mass, inertia) = if link.name == "body" || link.name == "root" {
+            (32.86f32, Vec3::new(0.1314, 0.1314, 0.1314))
+        } else if link.inertial.mass.value > 0.0 {
+            (
+                link.inertial.mass.value as f32,
+                Vec3::new(
+                    link.inertial.inertia.ixx as f32,
+                    link.inertial.inertia.iyy as f32,
+                    link.inertial.inertia.izz as f32,
+                ),
+            )
+        } else if link.name.contains("hip") {
+            (1.68f32, Vec3::new(0.0021, 0.0018, 0.0022))
+        } else if link.name.contains("uleg") {
+            (2.34f32, Vec3::new(0.0275, 0.0273, 0.0028))
+        } else if link.name.contains("lleg") {
+            (0.35f32, Vec3::new(0.0040, 0.0040, 0.0001))
+        } else {
+            (1.0f32, Vec3::splat(0.01))
+        };
 
         links.push(RobotLink {
             name: link.name.clone(),
@@ -63,6 +84,8 @@ pub fn load_spot_model() -> Result<RobotModel, String> {
             mesh_name,
             color,
             world_transform: Transform::IDENTITY,
+            mass,
+            inertia,
         });
     }
 

@@ -45,6 +45,27 @@ pub struct RobotJoint {
     pub inertia: f32,        // Apparent joint inertia in kg*m^2
 }
 
+/// Body collision box dimensions in URDF frame (Length: 0.58m, Width: 0.26m, Height: 0.16m)
+pub const BODY_BOX_SIZE: Vec3 = Vec3::new(0.58, 0.26, 0.16);
+
+/// Foot collision sphere radius (m)
+pub const FOOT_RADIUS: f32 = 0.02;
+
+/// Foot offset in URDF lower leg local frame
+pub const FOOT_OFFSET: Vec3 = Vec3::new(0.0, 0.0, -0.34);
+
+/// Marker component for link entities
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct LinkEntityIndex(pub usize);
+
+/// Marker component for robot revolute joint entities
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct RobotJointIndex(pub usize);
+
+/// Marker component for the robot floating base entity
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct RobotBaseMarker;
+
 /// A rigid link in the robot tree
 #[derive(Debug, Clone)]
 pub struct RobotLink {
@@ -55,11 +76,9 @@ pub struct RobotLink {
     pub mesh_name: Option<String>,
     pub color: Color,
     pub world_transform: Transform,
+    pub mass: f32,
+    pub inertia: Vec3,
 }
-
-/// Marker component for link entities
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct LinkEntityIndex(pub usize);
 
 /// Complete Spot Robot Model Resource
 #[derive(Debug, Clone, Resource)]
