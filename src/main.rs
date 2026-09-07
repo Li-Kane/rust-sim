@@ -1,22 +1,17 @@
 use bevy::prelude::*;
 
-mod controller;
-mod environment;
 mod gui;
 mod input;
 mod physics;
-mod robot;
+mod scene;
 
-pub use controller::JointPdController;
 pub use gui::SimulationSpeed;
 pub use input::{CameraSettings, SimState};
 
-use controller::ControllerPlugin;
-use environment::EnvironmentPlugin;
 use gui::SimGuiPlugin;
 use input::HandleInputPlugin;
 use physics::PhysicsPlugin;
-use robot::RobotPlugin;
+use scene::ScenePlugin;
 
 fn main() {
     App::new()
@@ -31,10 +26,8 @@ fn main() {
             ..default()
         }))
         .add_plugins((
-            EnvironmentPlugin,
-            RobotPlugin,
+            ScenePlugin,
             PhysicsPlugin,
-            ControllerPlugin,
             HandleInputPlugin,
             SimGuiPlugin,
         ))

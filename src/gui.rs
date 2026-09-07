@@ -4,7 +4,6 @@ use bevy_rapier3d::prelude::*;
 
 use crate::SimState;
 use crate::input::CameraSettings;
-use crate::robot::{LinkEntityIndex, RobotBaseMarker, RobotJointIndex, RobotModel};
 
 #[derive(Resource, Debug, Clone)]
 pub struct SimulationSpeed {
@@ -25,20 +24,13 @@ impl Plugin for SimGuiPlugin {
             .add_plugins(EguiPlugin::default())
             .add_systems(
                 EguiPrimaryContextPass,
-                joint_inspector_ui.run_if(in_state(SimState::Config)),
+                sim_ui.run_if(in_state(SimState::Config)),
             );
     }
 }
 
-pub fn joint_inspector_ui(
+pub fn sim_ui(
     mut contexts: EguiContexts,
-    robot: Option<ResMut<RobotModel>>,
-    mut base_query: Query<(&mut Transform, &mut Velocity), With<RobotBaseMarker>>,
-    mut link_query: Query<
-        (&LinkEntityIndex, &mut Transform, &mut Velocity),
-        Without<RobotBaseMarker>,
-    >,
-    mut joint_query: Query<(&RobotJointIndex, &mut MultibodyJoint)>,
     camera_settings: Option<ResMut<CameraSettings>>,
     mut debug_context: Option<ResMut<DebugRenderContext>>,
     mut sim_speed: Option<ResMut<SimulationSpeed>>,
@@ -46,7 +38,6 @@ pub fn joint_inspector_ui(
     mut virtual_time: Option<ResMut<Time<Virtual>>>,
 ) {
     let Ok(ctx) = contexts.ctx_mut() else { return };
-    let Some(mut robot) = robot else { return };
 
     egui::Window::new("Sim Configuration")
         .default_open(true)
@@ -60,28 +51,7 @@ pub fn joint_inspector_ui(
 
                 ui.horizontal(|ui| {
                     if ui.button("Reset Robot (Center & Pose)").clicked() {
-                        robot.reset_full();
-
-                        if let Ok((mut base_tf, mut base_vel)) = base_query.single_mut() {
-                            *base_tf = robot.root_transform;
-                            *base_vel = Velocity::zero();
-                        }
-
-                        for (link_idx, mut tf, mut vel) in link_query.iter_mut() {
-                            if link_idx.0 < robot.links.len() {
-                                *tf = robot.links[link_idx.0].world_transform;
-                            }
-                            *vel = Velocity::zero();
-                        }
-
-                        for (joint_idx, mut mb_joint) in joint_query.iter_mut() {
-                            if joint_idx.0 < robot.joints.len() {
-                                let target = robot.joints[joint_idx.0].desired_angle;
-                                if let TypedJoint::RevoluteJoint(ref mut rev) = mb_joint.data {
-                                    rev.set_motor_position(target, 80.0, 1.5);
-                                }
-                            }
-                        }
+                        todo!();
                     }
                     if let Some(ref mut debug) = debug_context {
                         ui.checkbox(&mut debug.enabled, "Show Collision Shapes");

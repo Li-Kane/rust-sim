@@ -1,4 +1,4 @@
-use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll};
+use bevy::input::mouse::AccumulatedMouseMotion;
 use bevy::prelude::*;
 use bevy::window::CursorGrabMode;
 
@@ -71,7 +71,6 @@ fn move_camera_system(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse_motion: Res<AccumulatedMouseMotion>,
-    mouse_scroll: Res<AccumulatedMouseScroll>,
     camera_settings: Res<CameraSettings>,
     mut query: Query<&mut Transform, With<Camera3d>>,
 ) {
@@ -86,15 +85,7 @@ fn move_camera_system(
             transform.rotation = yaw * transform.rotation * pitch;
         }
 
-        // 2. Mouse Scroll Zoom
-        let scroll_y = mouse_scroll.delta.y;
-        if scroll_y != 0.0 {
-            let zoom_speed = 1.5;
-            let forward = transform.forward();
-            transform.translation += *forward * scroll_y * zoom_speed;
-        }
-
-        // 3. Keyboard Movement (Camera-relative directions)
+        // 2. Keyboard Movement (Camera-relative directions)
         let speed = camera_settings.fly_speed * time.delta_secs();
         let forward = transform.forward();
         let right = transform.right();

@@ -3,22 +3,22 @@ use bevy_rapier3d::prelude::*;
 
 pub const WORLD_AXES_LENGTH: f32 = 2.0;
 
-pub struct EnvironmentPlugin;
+pub struct ScenePlugin;
 
-impl Plugin for EnvironmentPlugin {
+impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_environment)
+        app.add_systems(Startup, setup_scene)
             .add_systems(Update, draw_gridlines);
     }
 }
 
-pub fn setup_environment(
+pub fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // 3D Solid Ground Plane (top surface at y = 0.0)
-    let ground_mesh = meshes.add(Cuboid::new(50.0, 0.2, 50.0));
+    let ground_mesh = meshes.add(Cuboid::new(100.0, 0.2, 100.0));
     let ground_material = materials.add(StandardMaterial {
         base_color: Color::srgb(0.05, 0.08, 0.25),
         metallic: 0.1,
@@ -43,16 +43,6 @@ pub fn setup_environment(
             ..default()
         },
         Transform::from_xyz(4.0, 8.0, 4.0).looking_at(Vec3::ZERO, Vec3::Y),
-    ));
-
-    // Secondary Fill light
-    commands.spawn((
-        DirectionalLight {
-            shadow_maps_enabled: false,
-            illuminance: 2000.0,
-            ..default()
-        },
-        Transform::from_xyz(-4.0, 5.0, -4.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
     // Camera facing the Spot robot model
@@ -87,7 +77,19 @@ pub fn draw_gridlines(mut gizmos: Gizmos) {
 
     // World X, Y, Z axes
     let origin = Vec3::new(0.0, floor_y, 0.0);
-    gizmos.arrow(origin, origin + Vec3::X * WORLD_AXES_LENGTH, Color::srgb(1.0, 0.0, 0.0));
-    gizmos.arrow(origin, origin + Vec3::Y * WORLD_AXES_LENGTH, Color::srgb(0.0, 1.0, 0.0));
-    gizmos.arrow(origin, origin + Vec3::Z * WORLD_AXES_LENGTH, Color::srgb(0.0, 0.0, 1.0));
+    gizmos.arrow(
+        origin,
+        origin + Vec3::X * WORLD_AXES_LENGTH,
+        Color::srgb(1.0, 0.0, 0.0),
+    );
+    gizmos.arrow(
+        origin,
+        origin + Vec3::Y * WORLD_AXES_LENGTH,
+        Color::srgb(0.0, 1.0, 0.0),
+    );
+    gizmos.arrow(
+        origin,
+        origin + Vec3::Z * WORLD_AXES_LENGTH,
+        Color::srgb(0.0, 0.0, 1.0),
+    );
 }
