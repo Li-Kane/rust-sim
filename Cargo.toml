@@ -7,7 +7,6 @@ edition = "2024"
 bevy = "0.19.1"
 bevy_egui = "0.42.0"
 bevy_rapier3d = "0.36.0"
-tobj = { version = "4.0", default-features = false }
 urdf-rs = "0.8"
 
 # Enable a small amount of optimization in the dev profile.

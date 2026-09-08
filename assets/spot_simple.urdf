@@ -16,7 +16,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/base_simple/visual/body.obj"/>
+        <mesh filename="meshes/body.glb"/>
       </geometry>
       <material name="body">
         <color rgba="1 0.8431 0 1"/>
@@ -39,7 +39,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/base_simple/visual/hip.obj"/>
+        <mesh filename="meshes/hip.glb"/>
       </geometry>
       <material name="fl_hip">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -62,7 +62,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/base_simple/visual/uleg.obj"/>
+        <mesh filename="meshes/uleg.glb"/>
       </geometry>
       <material name="fl_uleg">
         <color rgba="1 0.8431 0 1"/>
@@ -85,7 +85,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/base_simple/visual/lleg.obj"/>
+        <mesh filename="meshes/lleg.glb"/>
       </geometry>
       <material name="fl_lleg">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -108,7 +108,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/base_simple/visual/hip.obj"/>
+        <mesh filename="meshes/hip.glb"/>
       </geometry>
       <material name="fr_hip">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -131,7 +131,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/base_simple/visual/uleg.obj"/>
+        <mesh filename="meshes/uleg.glb"/>
       </geometry>
       <material name="fr_uleg">
         <color rgba="1 0.8431 0 1"/>
@@ -154,7 +154,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/base_simple/visual/lleg.obj"/>
+        <mesh filename="meshes/lleg.glb"/>
       </geometry>
       <material name="fr_lleg">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -177,7 +177,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/base_simple/visual/hip.obj"/>
+        <mesh filename="meshes/hip.glb"/>
       </geometry>
       <material name="hl_hip">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -200,7 +200,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/base_simple/visual/uleg.obj"/>
+        <mesh filename="meshes/uleg.glb"/>
       </geometry>
       <material name="hl_uleg">
         <color rgba="1 0.8431 0 1"/>
@@ -223,7 +223,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/base_simple/visual/lleg.obj"/>
+        <mesh filename="meshes/lleg.glb"/>
       </geometry>
       <material name="hl_lleg">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -246,7 +246,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/base_simple/visual/hip.obj"/>
+        <mesh filename="meshes/hip.glb"/>
       </geometry>
       <material name="hr_hip">
         <color rgba="0.2 0.2 0.2 1"/>
@@ -269,7 +269,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/base_simple/visual/uleg.obj"/>
+        <mesh filename="meshes/uleg.glb"/>
       </geometry>
       <material name="hr_uleg">
         <color rgba="1 0.8431 0 1"/>
@@ -292,7 +292,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/base_simple/visual/lleg.obj"/>
+        <mesh filename="meshes/lleg.glb"/>
       </geometry>
       <material name="hr_lleg">
         <color rgba="0.2 0.2 0.2 1"/>

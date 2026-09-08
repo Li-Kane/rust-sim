@@ -94,16 +94,18 @@ pub fn sim_ui(
                 }
 
                 if let Some(mut cam) = camera_settings {
-                    egui::CollapsingHeader::new("Camera Controls").show(ui, |ui| {
-                        ui.horizontal(|ui| {
-                            ui.label("Flying Speed:");
-                            ui.add(
-                                egui::Slider::new(&mut cam.fly_speed, 0.5..=30.0)
-                                    .suffix(" m/s")
-                                    .fixed_decimals(1),
-                            );
+                    egui::CollapsingHeader::new("Camera Controls")
+                        .default_open(true)
+                        .show(ui, |ui| {
+                            ui.horizontal(|ui| {
+                                ui.label("Flying Speed:");
+                                ui.add(
+                                    egui::Slider::new(&mut cam.fly_speed, 0.5..=30.0)
+                                        .suffix(" m/s")
+                                        .fixed_decimals(1),
+                                );
+                            });
                         });
-                    });
                     ui.add_space(8.0);
                     ui.separator();
                 }
