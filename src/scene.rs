@@ -1,6 +1,12 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
+use std::path::Path;
+
+use crate::robot::spawn_robot;
+use crate::robot::types::Parse;
+use crate::robot::urdf_loader::URDF;
+
 pub const WORLD_AXES_LENGTH: f32 = 2.0;
 
 pub struct ScenePlugin;
@@ -16,6 +22,7 @@ pub fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
     // 3D Solid Ground Plane (top surface at y = 0.0)
     let ground_mesh = meshes.add(Cuboid::new(100.0, 0.2, 100.0));
@@ -50,6 +57,10 @@ pub fn setup_scene(
         Camera3d::default(),
         Transform::from_xyz(1.5, 1.0, 1.8).looking_at(Vec3::new(0.0, 0.4, 0.0), Vec3::Y),
     ));
+
+    // Spawn a SPOT robot model
+    let blueprint = URDF::parse(Path::new("assets/spot_simple.urdf"), &asset_server);
+    spawn_robot(commands, blueprint);
 }
 
 /// System to draw ground plane gridlines and world origin axes using Gizmos

@@ -1,29 +1,28 @@
+use std::path::Path;
+
 use bevy::prelude::*;
-use bevy_rapier3d::dynamics::{MultibodyJoint, RigidBody};
+use bevy_rapier3d::dynamics::{AdditionalMassProperties, TypedJoint};
 
-pub struct RobotBluePrint {
+pub struct RobotBlueprint {
     pub name: String,
-    pub joints: Vec<MultibodyJoint>,
-    pub links: Vec<RigidBody>,
+    pub joints: Vec<JointBlueprint>,
+    pub links: Vec<LinkBlueprint>,
 }
 
-#[derive(Component, Debug, Clone)]
-pub struct Robot {
+pub struct JointBlueprint {
     pub name: String,
-    pub joints: Vec<Entity>,
-    pub links: Vec<Entity>,
-    pub joints_name_to_idx: std::collections::HashMap<String, usize>,
-    pub links_name_to_idx: std::collections::HashMap<String, usize>,
+    pub joint_data: TypedJoint,
+    pub parent: String,
+    pub child: String,
 }
 
-impl Robot {
-    pub fn get_link(&self, name: &str) -> Option<Entity> {
-        self.links_name_to_idx.get(name).map(|&idx| self.links[idx])
-    }
+pub struct LinkBlueprint {
+    pub name: String,
+    pub additional_mass_properties: AdditionalMassProperties,
+    pub visuals: Vec<Handle<WorldAsset>>,
+}
 
-    pub fn get_joint(&self, name: &str) -> Option<Entity> {
-        self.joints_name_to_idx
-            .get(name)
-            .map(|&idx| self.joints[idx])
-    }
+pub trait Parse {
+    /// Convert a file path to a [`RobotBluePrint`].
+    fn parse(file_path: &Path, asset_server: &AssetServer) -> RobotBlueprint;
 }

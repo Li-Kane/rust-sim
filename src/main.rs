@@ -12,7 +12,6 @@ pub use input::{CameraSettings, SimState};
 use gui::SimGuiPlugin;
 use input::HandleInputPlugin;
 use physics::PhysicsPlugin;
-use robot::RobotPlugin;
 use scene::ScenePlugin;
 
 fn main() {
@@ -27,12 +26,6 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins((
-            ScenePlugin,
-            PhysicsPlugin,
-            HandleInputPlugin,
-            SimGuiPlugin,
-            RobotPlugin,
-        ))
+        .add_plugins((ScenePlugin, PhysicsPlugin, HandleInputPlugin, SimGuiPlugin))
         .run();
 }

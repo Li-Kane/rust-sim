@@ -1,3 +1,6 @@
+use std::path::Path;
+
+use super::types::*;
 use bevy::prelude::*;
 use bevy_rapier3d::dynamics::FixedJointBuilder;
 use bevy_rapier3d::dynamics::TypedJoint;
@@ -5,52 +8,56 @@ use bevy_rapier3d::prelude::*;
 use bevy_rapier3d::rapier::dynamics::MassProperties as RapierMassProperties;
 use urdf_rs::Robot as RobotURDF;
 
+pub struct URDF {}
+
 // Spot URDF content and mesh resources
-pub const URDF_CONTENT: &str = include_str!("../../assets/spot_simple.urdf");
-pub const URDF_TO_BEVY_MAT: Mat3 = Mat3::from_cols(
-    Vec3::new(0.0, 0.0, -1.0),
-    Vec3::new(-1.0, 0.0, 0.0),
-    Vec3::new(0.0, 1.0, 0.0),
-);
+// pub const URDF_CONTENT: &str = include_str!("../../assets/spot_simple.urdf");
+// pub const URDF_TO_BEVY_MAT: Mat3 = Mat3::from_cols(
+//     Vec3::new(0.0, 0.0, -1.0),
+//     Vec3::new(-1.0, 0.0, 0.0),
+//     Vec3::new(0.0, 1.0, 0.0),
+// );
 
-/// Loads a robot from a URDF string and spawns it in the scene.
-pub fn load_robot(mut commands: Commands, asset_server: Res<AssetServer>) {
-    // parse robot URDF
-    let robot: RobotURDF = urdf_rs::read_from_string(URDF_CONTENT).unwrap();
+impl Parse for URDF {
+    fn parse(file_path: &Path, asset_server: &AssetServer) -> RobotBlueprint {
+        let robot: RobotURDF = urdf_rs::read_file(file_path).unwrap();
+        let mut links: Vec<LinkBlueprint> = Vec::new();
+        let mut joints: Vec<JointBlueprint> = Vec::new();
 
-    // load each robot link
-    let mut link_map: std::collections::HashMap<String, Entity> = std::collections::HashMap::new();
-    for link in robot.links {
-        // add a rigid body for this link with its initial world transform
-        let mut link_cmd = commands.spawn(RigidBody::Dynamic);
-
-        // Apply inertial properties from the URDF Link
-        link_cmd.insert(inertial_to_additional_mass_properties(&link.inertial));
-
-        let link_entity = link_cmd.id();
-
-        // add visual meshes for this link
-        for visual in link.visual {
-            if let urdf_rs::Geometry::Mesh { filename, .. } = visual.geometry {
-                let mesh = asset_server.load(GltfAssetLabel::Scene(0).from_asset(filename));
-                let visual_mesh = commands.spawn((WorldAssetRoot(mesh),)).id();
-                commands.entity(link_entity).add_child(visual_mesh);
+        // Create the link blueprints
+        for link in robot.links {
+            let mut visuals = Vec::new();
+            for visual in link.visual {
+                if let urdf_rs::Geometry::Mesh { filename, .. } = visual.geometry {
+                    let mesh = asset_server.load(GltfAssetLabel::Scene(0).from_asset(filename));
+                    visuals.push(mesh);
+                }
             }
+            let link_blueprint = LinkBlueprint {
+                name: link.name.clone(),
+                additional_mass_properties: inertial_to_additional_mass_properties(&link.inertial),
+                visuals: visuals,
+            };
+            links.push(link_blueprint);
         }
 
-        // TODO: add collision meshes for this link
+        // Create the joint blueprints
+        for joint in robot.joints {
+            let joint_data = urdf_joint_to_typed_joint(&joint);
+            let joint_blueprint = JointBlueprint {
+                name: joint.name.clone(),
+                joint_data,
+                parent: joint.parent.link,
+                child: joint.child.link,
+            };
+            joints.push(joint_blueprint);
+        }
 
-        link_map.insert(link.name, link_entity);
-    }
-
-    // load each robot joint
-    for joint in robot.joints {
-        // ROS URDF expects a link -> joint -> link hierarchy
-        let parent_entity = link_map.get(&joint.parent.link).unwrap();
-        let child_entity = link_map.get(&joint.child.link).unwrap();
-        let joint_data = urdf_joint_to_typed_joint(&joint);
-        let multibody_joint = MultibodyJoint::new(*parent_entity, joint_data);
-        commands.entity(*child_entity).insert(multibody_joint);
+        RobotBlueprint {
+            name: robot.name,
+            joints,
+            links,
+        }
     }
 }
 
