@@ -4,13 +4,11 @@ use bevy::prelude::*;
 use bevy_rapier3d::dynamics::{AdditionalMassProperties, TypedJoint};
 
 pub struct RobotBlueprint {
-    pub name: String,
     pub joints: Vec<JointBlueprint>,
     pub links: Vec<LinkBlueprint>,
 }
 
 pub struct JointBlueprint {
-    pub name: String,
     pub joint_data: TypedJoint,
     pub parent_link: usize,
     pub child_link: usize,
@@ -18,7 +16,6 @@ pub struct JointBlueprint {
 }
 
 pub struct LinkBlueprint {
-    pub name: String,
     pub additional_mass_properties: AdditionalMassProperties,
     pub visuals: Vec<Handle<WorldAsset>>,
     pub parent_joint: Option<usize>,
