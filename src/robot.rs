@@ -6,12 +6,26 @@ use bevy_rapier3d::prelude::*;
 use types::RobotBlueprint;
 
 /// Spawns a robot from a RobotBlueprint and spawns it in the scene.
-pub fn spawn_robot(mut commands: Commands, robot_blueprint: RobotBlueprint) {
+/// Rapier3D joint motors use world transforms so we need to convert local joint transforms to world transforms.
+pub fn spawn_robot(
+    mut commands: Commands,
+    robot_blueprint: RobotBlueprint,
+    root_transform: Option<Transform>,
+) {
     // load each robot link
-    let mut link_map: std::collections::HashMap<String, Entity> = std::collections::HashMap::new();
-    for link in robot_blueprint.links {
+    let mut link_entities: Vec<Entity> = Vec::new();
+    for (idx, link) in robot_blueprint.links.into_iter().enumerate() {
+        // if a root transform is provided, apply it to the robot's root link
+        let link_transform = if idx == 0
+            && let Some(root_transform) = root_transform
+        {
+            root_transform * link.world_transform
+        } else {
+            link.world_transform
+        };
+
         // add a rigid body for this link with its initial world transform
-        let mut link_cmd = commands.spawn(RigidBody::Dynamic);
+        let mut link_cmd = commands.spawn((RigidBody::Dynamic, link_transform));
 
         // Apply inertial properties from the URDF Link
         link_cmd.insert(link.additional_mass_properties);
@@ -25,15 +39,14 @@ pub fn spawn_robot(mut commands: Commands, robot_blueprint: RobotBlueprint) {
         }
 
         // TODO: add collision meshes for this link
-
-        link_map.insert(link.name, link_entity);
+        link_entities.push(link_entity);
     }
 
     // load each robot joint
     for joint in robot_blueprint.joints {
         // ROS URDF expects a link -> joint -> link hierarchy
-        let parent_entity = link_map.get(&joint.parent).unwrap();
-        let child_entity = link_map.get(&joint.child).unwrap();
+        let parent_entity = link_entities.get(joint.parent_link).unwrap();
+        let child_entity = link_entities.get(joint.child_link).unwrap();
         let multibody_joint = MultibodyJoint::new(*parent_entity, joint.joint_data);
         commands.entity(*child_entity).insert(multibody_joint);
     }

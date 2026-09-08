@@ -60,7 +60,8 @@ pub fn setup_scene(
 
     // Spawn a SPOT robot model
     let blueprint = URDF::parse(Path::new("assets/spot_simple.urdf"), &asset_server);
-    spawn_robot(commands, blueprint);
+    let robot_transform = Transform::from_xyz(0.0, 4.0, 0.0);
+    spawn_robot(commands, blueprint, Some(robot_transform));
 }
 
 /// System to draw ground plane gridlines and world origin axes using Gizmos

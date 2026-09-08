@@ -12,14 +12,18 @@ pub struct RobotBlueprint {
 pub struct JointBlueprint {
     pub name: String,
     pub joint_data: TypedJoint,
-    pub parent: String,
-    pub child: String,
+    pub parent_link: usize,
+    pub child_link: usize,
+    pub world_transform: Transform,
 }
 
 pub struct LinkBlueprint {
     pub name: String,
     pub additional_mass_properties: AdditionalMassProperties,
     pub visuals: Vec<Handle<WorldAsset>>,
+    pub parent_joint: Option<usize>,
+    pub children_joints: Vec<usize>,
+    pub world_transform: Transform,
 }
 
 pub trait Parse {
