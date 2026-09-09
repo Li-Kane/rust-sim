@@ -296,8 +296,4 @@
     <child link="hr_lleg"/>
     <limit effort="1000" lower="-2.7929" upper="-0.248282" velocity="1000.00"/>
   </joint>
-  <!-- Standard accessories. -->
-  <!-- <xacro:include filename="$(find spot_description)/urdf/accessories.urdf.xacro" /> -->
-  <!-- Optional custom includes. -->
-  <!-- <xacro:include filename="$(optenv SPOT_URDF_EXTRAS empty.urdf)" /> -->
 </robot>

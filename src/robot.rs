@@ -12,53 +12,57 @@ pub fn spawn_robot(
     robot_blueprint: RobotBlueprint,
     root_transform: Option<Transform>,
 ) {
-    // load each robot link
-    let mut link_entities: Vec<Entity> = Vec::new();
-    for (idx, link) in robot_blueprint.links.into_iter().enumerate() {
-        // if a root transform is provided, apply it to the robot's root link
-        let link_transform = if idx == 0
-            && let Some(root_transform) = root_transform
-        {
-            root_transform * link.world_transform
-        } else {
-            link.world_transform
-        };
+    let root_transform = root_transform.unwrap_or(Transform::IDENTITY);
+    let RobotBlueprint { links, joints, .. } = robot_blueprint;
+    let mut joint_world_transforms = vec![Transform::IDENTITY; joints.len()];
 
-        // add a rigid body for this link with its initial world transform
-        let mut link_cmd = commands.spawn((RigidBody::Dynamic, link_transform));
+    // Load each robot link and collect entity IDs
+    let link_entities: Vec<Entity> = links
+        .into_iter()
+        .map(|link| {
+            // Compute the world transform using forward kinematics
+            let world_transform = if let Some(parent_joint) = link.parent_joint {
+                joint_world_transforms[parent_joint] * link.local_transform
+            } else {
+                root_transform * link.local_transform
+            };
 
-        // Apply inertial properties from the URDF Link
-        link_cmd.insert(link.additional_mass_properties);
+            // Compute child joint world transforms
+            for &child_joint in &link.children_joints {
+                joint_world_transforms[child_joint] =
+                    world_transform * joints[child_joint].local_transform;
+            }
 
-        let link_entity = link_cmd.id();
-
-        // add visual meshes for this link
-        for visual in link.visuals {
-            let mesh = commands.spawn(WorldAssetRoot(visual)).id();
-            commands.entity(link_entity).add_child(mesh);
-        }
-
-        // add collision meshes for this link
-        for collision in link.collisions {
-            let mesh = commands
+            // spawn the link entity
+            commands
                 .spawn((
-                    WorldAssetRoot(collision),
-                    AsyncSceneCollider::default(),
-                    Visibility::Hidden,
+                    RigidBody::Dynamic,
+                    world_transform,
+                    Visibility::default(),
+                    link.additional_mass_properties,
                 ))
-                .id();
-            commands.entity(link_entity).add_child(mesh);
-        }
+                .with_children(|parent| {
+                    for visual in link.visuals {
+                        parent.spawn(WorldAssetRoot(visual));
+                    }
 
-        link_entities.push(link_entity);
-    }
+                    for collision in link.collisions {
+                        parent.spawn((
+                            WorldAssetRoot(collision),
+                            AsyncSceneCollider::default(),
+                            Visibility::Hidden,
+                        ));
+                    }
+                })
+                .id()
+        })
+        .collect();
 
-    // load each robot joint
-    for joint in robot_blueprint.joints {
-        // ROS URDF expects a link -> joint -> link hierarchy
-        let parent_entity = link_entities.get(joint.parent_link).unwrap();
-        let child_entity = link_entities.get(joint.child_link).unwrap();
-        let multibody_joint = MultibodyJoint::new(*parent_entity, joint.joint_data);
-        commands.entity(*child_entity).insert(multibody_joint);
+    // Load each robot joint
+    for joint in joints {
+        let parent_entity = link_entities[joint.parent_link];
+        let child_entity = link_entities[joint.child_link];
+        let multibody_joint = MultibodyJoint::new(parent_entity, joint.joint_data);
+        commands.entity(child_entity).insert(multibody_joint);
     }
 }

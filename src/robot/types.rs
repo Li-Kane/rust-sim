@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{io::Read, path::Path};
 
 use bevy::prelude::*;
 use bevy_rapier3d::dynamics::{AdditionalMassProperties, TypedJoint};
@@ -14,7 +14,7 @@ pub struct JointBlueprint {
     pub joint_data: TypedJoint,
     pub parent_link: usize,
     pub child_link: usize,
-    pub world_transform: Transform,
+    pub local_transform: Transform,
 }
 
 pub struct LinkBlueprint {
@@ -24,10 +24,10 @@ pub struct LinkBlueprint {
     pub collisions: Vec<Handle<WorldAsset>>,
     pub parent_joint: Option<usize>,
     pub children_joints: Vec<usize>,
-    pub world_transform: Transform,
+    pub local_transform: Transform,
 }
 
 pub trait Parse {
     /// Convert a file path to a [`RobotBluePrint`].
-    fn parse(file_path: &Path, asset_server: &AssetServer) -> RobotBlueprint;
+    fn parse<R: Read>(reader: R, asset_server: &AssetServer) -> RobotBlueprint;
 }

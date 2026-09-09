@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::io::Read;
 
 use super::types::*;
 use bevy::prelude::*;
@@ -10,13 +10,13 @@ use urdf_rs::Robot as RobotURDF;
 
 pub struct URDF {}
 
-// Bevy uses a Y-up coordinate system, so we need to convert URDF's Z-up to Bevy's Y-up
-pub const URDF_TO_BEVY_ROT: Transform =
-    Transform::from_rotation(Quat::from_xyzw(-0.5, 0.5, 0.5, 0.5));
-
 impl Parse for URDF {
-    fn parse(file_path: &Path, asset_server: &AssetServer) -> RobotBlueprint {
-        let robot: RobotURDF = urdf_rs::read_file(file_path).unwrap();
+    fn parse<R: Read>(mut reader: R, asset_server: &AssetServer) -> RobotBlueprint {
+        let mut urdf_str = String::new();
+        reader
+            .read_to_string(&mut urdf_str)
+            .expect("Failed to read URDF stream");
+        let robot: RobotURDF = urdf_rs::read_from_string(&urdf_str).unwrap();
         let mut links: Vec<LinkBlueprint> = Vec::new();
         let mut joints: Vec<JointBlueprint> = Vec::new();
         let mut name_to_joint: std::collections::HashMap<String, usize> =
@@ -27,19 +27,18 @@ impl Parse for URDF {
         // Create the link blueprints
         for link in robot.links {
             // Create the visuals
-            let mut visuals: Vec<Handle<WorldAsset>> = Vec::new();
-            for visual in link.visual {
-                visuals.push(urdf_geometry_to_bevy_asset(visual.geometry, &asset_server));
-            }
+            let visuals = link
+                .visual
+                .into_iter()
+                .map(|visual| urdf_geometry_to_bevy_asset(visual.geometry, &asset_server))
+                .collect();
 
             // Create the collisions
-            let mut collisions: Vec<Handle<WorldAsset>> = Vec::new();
-            for collision in link.collision {
-                collisions.push(urdf_geometry_to_bevy_asset(
-                    collision.geometry,
-                    &asset_server,
-                ));
-            }
+            let collisions = link
+                .collision
+                .into_iter()
+                .map(|collision| urdf_geometry_to_bevy_asset(collision.geometry, &asset_server))
+                .collect();
 
             // TODO: Create the material
 
@@ -54,7 +53,7 @@ impl Parse for URDF {
                 collisions: collisions,
                 parent_joint: None,
                 children_joints: Vec::new(),
-                world_transform: local_transform,
+                local_transform,
             };
             links.push(link_blueprint);
             name_to_link.insert(link.name, links.len() - 1);
@@ -64,17 +63,16 @@ impl Parse for URDF {
         for joint in robot.joints {
             let parent_link = name_to_link[&joint.parent.link];
             let child_link = name_to_link[&joint.child.link];
-            let joint_data = urdf_joint_to_typed_joint(&joint);
             let euler = joint.origin.rpy.to_bevy();
             let rotation = Quat::from_euler(EulerRot::XYZ, euler.x, euler.y, euler.z);
             let local_transform =
                 Transform::from_translation(joint.origin.xyz.to_bevy()).with_rotation(rotation);
             let joint_blueprint = JointBlueprint {
                 name: joint.name.clone(),
-                joint_data,
+                joint_data: urdf_joint_to_typed_joint(&joint),
                 parent_link,
                 child_link,
-                world_transform: local_transform,
+                local_transform,
             };
             joints.push(joint_blueprint);
             name_to_joint.insert(joint.name, joints.len() - 1);
@@ -87,18 +85,7 @@ impl Parse for URDF {
         // if there is a root link, convert it to bevy coordinates
         // we will assume the root link is the first link and is not transformed
         if let Some(root_link) = links.get_mut(0) {
-            root_link.world_transform = URDF_TO_BEVY_ROT;
-        }
-
-        // Compute world transforms
-        for link in &mut links {
-            if let Some(parent_joint) = link.parent_joint {
-                link.world_transform = joints[parent_joint].world_transform * link.world_transform;
-            }
-            for child_joint in &link.children_joints {
-                joints[*child_joint].world_transform =
-                    link.world_transform * joints[*child_joint].world_transform;
-            }
+            root_link.local_transform = URDF_TO_BEVY_ROT;
         }
 
         RobotBlueprint {
@@ -108,6 +95,10 @@ impl Parse for URDF {
         }
     }
 }
+
+/// Bevy uses a Y-up coordinate system, so we need to convert URDF's Z-up to Bevy's Y-up
+pub const URDF_TO_BEVY_ROT: Transform =
+    Transform::from_rotation(Quat::from_xyzw(-0.5, 0.5, 0.5, 0.5));
 
 /// Helper trait to convert a urdff-rs [`Vec3`] to a Bevy [`Vec3`].
 pub trait UrdfVec3Ext {
@@ -181,9 +172,7 @@ pub fn urdf_geometry_to_bevy_asset(
 pub fn urdf_joint_to_typed_joint(joint: &urdf_rs::Joint) -> TypedJoint {
     let joint_rpy = joint.origin.rpy.to_bevy();
     let local_anchor1 = joint.origin.xyz.to_bevy();
-    let local_anchor2 = Vec3::ZERO;
     let local_basis1 = Quat::from_euler(EulerRot::XYZ, joint_rpy[0], joint_rpy[1], joint_rpy[2]);
-    let local_basis2 = Quat::IDENTITY;
 
     // TODO: Handle damping, friction, limits, mimic, and safety controller
 
@@ -191,9 +180,7 @@ pub fn urdf_joint_to_typed_joint(joint: &urdf_rs::Joint) -> TypedJoint {
         urdf_rs::JointType::Fixed => {
             let joint = FixedJointBuilder::new()
                 .local_anchor1(local_anchor1)
-                .local_anchor2(local_anchor2)
                 .local_basis1(local_basis1)
-                .local_basis2(local_basis2)
                 .build();
             TypedJoint::FixedJoint(joint)
         }
@@ -201,7 +188,6 @@ pub fn urdf_joint_to_typed_joint(joint: &urdf_rs::Joint) -> TypedJoint {
             let axis: Vec3 = joint.axis.xyz.to_bevy();
             let joint = RevoluteJointBuilder::new(axis)
                 .local_anchor1(local_anchor1)
-                .local_anchor2(local_anchor2)
                 .build();
             TypedJoint::RevoluteJoint(joint)
         }

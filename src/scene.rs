@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
-use std::path::Path;
-
 use crate::robot::spawn_robot;
 use crate::robot::types::Parse;
 use crate::robot::urdf_loader::URDF;
@@ -59,8 +57,11 @@ pub fn setup_scene(
     ));
 
     // Spawn a SPOT robot model
-    let blueprint = URDF::parse(Path::new("assets/spot_simple.urdf"), &asset_server);
-    let robot_transform = Transform::from_xyz(0.0, 4.0, 0.0);
+    let blueprint = URDF::parse(
+        include_str!("../assets/spot.urdf").as_bytes(),
+        &asset_server,
+    );
+    let robot_transform = Transform::from_xyz(0.0, 0.8, 0.0);
     spawn_robot(commands, blueprint, Some(robot_transform));
 }
 

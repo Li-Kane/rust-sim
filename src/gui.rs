@@ -49,18 +49,6 @@ pub fn sim_ui(
                 ui.label("Press ESC to resume physics & camera controls.");
                 ui.separator();
 
-                ui.horizontal(|ui| {
-                    if ui.button("Reset Robot (Center & Pose)").clicked() {
-                        todo!();
-                    }
-                    if let Some(ref mut debug) = debug_context {
-                        ui.checkbox(&mut debug.enabled, "Show Collision Shapes");
-                    }
-                });
-
-                ui.add_space(8.0);
-                ui.separator();
-
                 if let Some(ref mut sim_speed) = sim_speed {
                     egui::CollapsingHeader::new("Simulation Controls")
                         .default_open(true)
@@ -121,9 +109,8 @@ fn update_sim_speed(
     // update physics speed
     if let Some(mode) = timestep_mode {
         match mode.as_mut() {
-            TimestepMode::Fixed { dt, substeps } => {
+            TimestepMode::Fixed { dt, .. } => {
                 *dt = (1.0 / 60.0) * speed;
-                *substeps = (4.0 * speed.max(1.0)).round() as usize;
             }
             TimestepMode::Variable { time_scale, .. } => {
                 *time_scale = speed;
