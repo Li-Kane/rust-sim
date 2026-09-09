@@ -1,9 +1,8 @@
+use std::collections::HashMap;
 use std::io::Read;
 
 use super::types::*;
 use bevy::prelude::*;
-use bevy_rapier3d::dynamics::FixedJointBuilder;
-use bevy_rapier3d::dynamics::TypedJoint;
 use bevy_rapier3d::prelude::*;
 use bevy_rapier3d::rapier::dynamics::MassProperties as RapierMassProperties;
 use urdf_rs::Robot as RobotURDF;
@@ -11,80 +10,49 @@ use urdf_rs::Robot as RobotURDF;
 pub struct URDF {}
 
 impl Parse for URDF {
+    /// Parses a URDF file from a reader and returns a [`RobotBlueprint`].
     fn parse<R: Read>(mut reader: R, asset_server: &AssetServer) -> RobotBlueprint {
         let mut urdf_str = String::new();
         reader
             .read_to_string(&mut urdf_str)
             .expect("Failed to read URDF stream");
-        let robot: RobotURDF = urdf_rs::read_from_string(&urdf_str).unwrap();
-        let mut links: Vec<LinkBlueprint> = Vec::new();
-        let mut joints: Vec<JointBlueprint> = Vec::new();
-        let mut name_to_joint: std::collections::HashMap<String, usize> =
-            std::collections::HashMap::new();
-        let mut name_to_link: std::collections::HashMap<String, usize> =
-            std::collections::HashMap::new();
+        let robot: RobotURDF = urdf_rs::read_from_string(&urdf_str).expect("Failed to parse URDF");
 
-        // Create the link blueprints
-        for link in robot.links {
-            // Create the visuals
-            let visuals = link
-                .visual
-                .into_iter()
-                .map(|visual| urdf_geometry_to_bevy_asset(visual.geometry, &asset_server))
-                .collect();
+        let name_to_link: HashMap<String, usize> = robot
+            .links
+            .iter()
+            .enumerate()
+            .map(|(idx, link)| (link.name.clone(), idx))
+            .collect();
 
-            // Create the collisions
-            let collisions = link
-                .collision
-                .into_iter()
-                .map(|collision| urdf_geometry_to_bevy_asset(collision.geometry, &asset_server))
-                .collect();
+        let mut links: Vec<LinkBlueprint> = robot
+            .links
+            .into_iter()
+            .map(|link| urdf_link_to_blueprint(link, asset_server))
+            .collect();
 
-            // TODO: Create the material
-
-            let euler = link.inertial.origin.rpy.to_bevy();
-            let rotation = Quat::from_euler(EulerRot::XYZ, euler.x, euler.y, euler.z);
-            let local_transform = Transform::from_translation(link.inertial.origin.xyz.to_bevy())
-                .with_rotation(rotation);
-            let link_blueprint = LinkBlueprint {
-                name: link.name.clone(),
-                additional_mass_properties: inertial_to_additional_mass_properties(&link.inertial),
-                visuals: visuals,
-                collisions: collisions,
-                parent_joint: None,
-                children_joints: Vec::new(),
-                local_transform,
-            };
-            links.push(link_blueprint);
-            name_to_link.insert(link.name, links.len() - 1);
-        }
-
-        // Create the joint blueprints
-        for joint in robot.joints {
+        let mut joints = Vec::with_capacity(robot.joints.len());
+        for (joint_idx, joint) in robot.joints.into_iter().enumerate() {
             let parent_link = name_to_link[&joint.parent.link];
             let child_link = name_to_link[&joint.child.link];
-            let euler = joint.origin.rpy.to_bevy();
-            let rotation = Quat::from_euler(EulerRot::XYZ, euler.x, euler.y, euler.z);
-            let local_transform =
-                Transform::from_translation(joint.origin.xyz.to_bevy()).with_rotation(rotation);
-            let joint_blueprint = JointBlueprint {
-                name: joint.name.clone(),
-                joint_data: urdf_joint_to_typed_joint(&joint),
+            let local_transform = urdf_pose_to_transform(&joint.origin);
+            let joint_data = urdf_joint_to_typed_joint(&joint);
+
+            joints.push(JointBlueprint {
+                name: joint.name,
+                joint_data,
                 parent_link,
                 child_link,
                 local_transform,
-            };
-            joints.push(joint_blueprint);
-            name_to_joint.insert(joint.name, joints.len() - 1);
+            });
 
-            // fill parent and child link fields
-            links[parent_link].children_joints.push(joints.len() - 1);
-            links[child_link].parent_joint = Some(joints.len() - 1);
+            links[parent_link].children_joints.push(joint_idx);
+            links[child_link].parent_joint = Some(joint_idx);
         }
 
         // if there is a root link, convert it to bevy coordinates
         // we will assume the root link is the first link and is not transformed
-        if let Some(root_link) = links.get_mut(0) {
+        if let Some(root_link) = links.first_mut() {
             root_link.local_transform = URDF_TO_BEVY_ROT;
         }
 
@@ -112,6 +80,40 @@ impl UrdfVec3Ext for urdf_rs::Vec3 {
     }
 }
 
+/// Converts a urdf-rs [`Link`] to a [`LinkBlueprint`].
+fn urdf_link_to_blueprint(link: urdf_rs::Link, asset_server: &AssetServer) -> LinkBlueprint {
+    let visuals = link
+        .visual
+        .into_iter()
+        .map(|visual| urdf_geometry_to_bevy_asset(visual.geometry, asset_server))
+        .collect();
+
+    let collisions = link
+        .collision
+        .into_iter()
+        .map(|collision| urdf_geometry_to_bevy_asset(collision.geometry, asset_server))
+        .collect();
+
+    let local_transform = urdf_pose_to_transform(&link.inertial.origin);
+
+    LinkBlueprint {
+        name: link.name,
+        additional_mass_properties: inertial_to_additional_mass_properties(&link.inertial),
+        visuals,
+        collisions,
+        parent_joint: None,
+        children_joints: Vec::new(),
+        local_transform,
+    }
+}
+
+/// Converts a urdf-rs [`Pose`] to a Bevy [`Transform`].
+pub fn urdf_pose_to_transform(origin: &urdf_rs::Pose) -> Transform {
+    let euler = origin.rpy.to_bevy();
+    let rotation = Quat::from_euler(EulerRot::XYZ, euler.x, euler.y, euler.z);
+    Transform::from_translation(origin.xyz.to_bevy()).with_rotation(rotation)
+}
+
 /// Converts an urdf-rs [`Inertial`] struct to a Bevy Rapier [`AdditionalMassProperties`] struct.
 pub fn inertial_to_additional_mass_properties(
     inertial: &urdf_rs::Inertial,
@@ -130,12 +132,8 @@ pub fn inertial_to_additional_mass_properties(
     );
 
     // Orientation of the inertial frame relative to the URDF link frame
-    let r_rpy = Mat3::from_euler(
-        EulerRot::XYZ,
-        inertial.origin.rpy[0] as f32,
-        inertial.origin.rpy[1] as f32,
-        inertial.origin.rpy[2] as f32,
-    );
+    let euler = inertial.origin.rpy.to_bevy();
+    let r_rpy = Mat3::from_euler(EulerRot::XYZ, euler.x, euler.y, euler.z);
 
     // Transform inertia matrix to Bevy coordinate frame: I_bevy = R_total * I_urdf * R_total^T
     let bevy_inertia = r_rpy * urdf_inertia * r_rpy.transpose();
@@ -170,9 +168,9 @@ pub fn urdf_geometry_to_bevy_asset(
 
 /// Converts a urdf-rs [`Joint`] to a Bevy Rapier [`TypedJoint`].
 pub fn urdf_joint_to_typed_joint(joint: &urdf_rs::Joint) -> TypedJoint {
-    let joint_rpy = joint.origin.rpy.to_bevy();
-    let local_anchor1 = joint.origin.xyz.to_bevy();
-    let local_basis1 = Quat::from_euler(EulerRot::XYZ, joint_rpy[0], joint_rpy[1], joint_rpy[2]);
+    let origin = urdf_pose_to_transform(&joint.origin);
+    let local_anchor1 = origin.translation;
+    let local_basis1 = origin.rotation;
 
     // TODO: Handle damping, friction, limits, mimic, and safety controller
 

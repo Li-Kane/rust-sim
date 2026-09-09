@@ -1,4 +1,4 @@
-use std::{io::Read, path::Path};
+use std::io::Read;
 
 use bevy::prelude::*;
 use bevy_rapier3d::dynamics::{AdditionalMassProperties, TypedJoint};

@@ -61,7 +61,7 @@ pub fn setup_scene(
         include_str!("../assets/spot.urdf").as_bytes(),
         &asset_server,
     );
-    let robot_transform = Transform::from_xyz(0.0, 0.8, 0.0);
+    let robot_transform = Transform::from_xyz(0.0, 1.0, 0.0);
     spawn_robot(commands, blueprint, Some(robot_transform));
 }
 
