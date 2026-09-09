@@ -21,6 +21,7 @@ pub struct LinkBlueprint {
     pub name: String,
     pub additional_mass_properties: AdditionalMassProperties,
     pub visuals: Vec<Handle<WorldAsset>>,
+    pub collisions: Vec<Handle<WorldAsset>>,
     pub parent_joint: Option<usize>,
     pub children_joints: Vec<usize>,
     pub world_transform: Transform,

@@ -38,7 +38,18 @@ pub fn spawn_robot(
             commands.entity(link_entity).add_child(mesh);
         }
 
-        // TODO: add collision meshes for this link
+        // add collision meshes for this link
+        for collision in link.collisions {
+            let mesh = commands
+                .spawn((
+                    WorldAssetRoot(collision),
+                    AsyncSceneCollider::default(),
+                    Visibility::Hidden,
+                ))
+                .id();
+            commands.entity(link_entity).add_child(mesh);
+        }
+
         link_entities.push(link_entity);
     }
 

@@ -16,11 +16,8 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/body.glb"/>
+        <mesh filename="meshes/visual/body.glb"/>
       </geometry>
-      <material name="body">
-        <color rgba="1 0.8431 0 1"/>
-      </material>
     </visual>
   </link>
   <link name="body_inertia">
@@ -39,11 +36,8 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/hip.glb"/>
+        <mesh filename="meshes/visual/hip.glb"/>
       </geometry>
-      <material name="fl_hip">
-        <color rgba="0.2 0.2 0.2 1"/>
-      </material>
     </visual>
     <inertial>
       <origin rpy="-0.716521349312305 0.02956473059648479 0.03655230014702582" xyz="-0.005374345928430557 0.012841847725212574 9.875232353806496e-05"/>
@@ -62,11 +56,8 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/uleg.glb"/>
+        <mesh filename="meshes/visual/uleg.glb"/>
       </geometry>
-      <material name="fl_uleg">
-        <color rgba="1 0.8431 0 1"/>
-      </material>
     </visual>
     <inertial>
       <origin rpy="-0.26437828203369795 -0.04853174570753804 0.024046963096353124" xyz="0.005142373498529196 -0.0024323679972440004 -0.12100915610790253"/>
@@ -85,12 +76,15 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/lleg.glb"/>
+        <mesh filename="meshes/visual/lleg.glb"/>
       </geometry>
-      <material name="fl_lleg">
-        <color rgba="0.2 0.2 0.2 1"/>
-      </material>
     </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="meshes/collision/lleg.glb"/>
+      </geometry>
+    </collision>
     <inertial>
       <origin rpy="-0.007266925694167092 -0.009591807116834161 0.00035255970529224356" xyz="0.00225794012658298 4.607596201822162e-05 -0.1800822913646698"/>
       <mass value="0.35"/>
@@ -108,11 +102,8 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/hip.glb"/>
+        <mesh filename="meshes/visual/hip.glb"/>
       </geometry>
-      <material name="fr_hip">
-        <color rgba="0.2 0.2 0.2 1"/>
-      </material>
     </visual>
     <inertial>
       <origin rpy="0.7165213493123055 -0.02956473059648479 0.03655230014702582" xyz="-0.005374345928430557 -0.012841847725212574 -9.875232353806496e-05"/>
@@ -131,11 +122,8 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/uleg.glb"/>
+        <mesh filename="meshes/visual/uleg.glb"/>
       </geometry>
-      <material name="fr_uleg">
-        <color rgba="1 0.8431 0 1"/>
-      </material>
     </visual>
     <inertial>
       <origin rpy="0.2643905306958363 -0.04853174688302708 -0.024046943559834943" xyz="0.005142373498529196 0.0024323677644133568 -0.12100915610790253"/>
@@ -154,12 +142,15 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/lleg.glb"/>
+        <mesh filename="meshes/visual/lleg.glb"/>
       </geometry>
-      <material name="fr_lleg">
-        <color rgba="0.2 0.2 0.2 1"/>
-      </material>
     </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="meshes/collision/lleg.glb"/>
+      </geometry>
+    </collision>
     <inertial>
       <origin rpy="-0.007266925694167092 -0.009591807116834161 0.00035255970529224356" xyz="0.00225794012658298 4.607596201822162e-05 -0.1800822913646698"/>
       <mass value="0.35"/>
@@ -177,11 +168,8 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/hip.glb"/>
+        <mesh filename="meshes/visual/hip.glb"/>
       </geometry>
-      <material name="hl_hip">
-        <color rgba="0.2 0.2 0.2 1"/>
-      </material>
     </visual>
     <inertial>
       <origin rpy="0.7165213493123055 0.02956473059648479 -0.03655230014702582" xyz="0.005374345928430557 0.012841847725212574 -9.875232353806496e-05"/>
@@ -200,11 +188,8 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/uleg.glb"/>
+        <mesh filename="meshes/visual/uleg.glb"/>
       </geometry>
-      <material name="hl_uleg">
-        <color rgba="1 0.8431 0 1"/>
-      </material>
     </visual>
     <inertial>
       <origin rpy="-0.26437828203369795 -0.04853174570753804 0.024046963096353124" xyz="0.005142373498529196 -0.0024323679972440004 -0.12100915610790253"/>
@@ -223,12 +208,15 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/lleg.glb"/>
+        <mesh filename="meshes/visual/lleg.glb"/>
       </geometry>
-      <material name="hl_lleg">
-        <color rgba="0.2 0.2 0.2 1"/>
-      </material>
     </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="meshes/collision/lleg.glb"/>
+      </geometry>
+    </collision>
     <inertial>
       <origin rpy="-0.007266925694167092 -0.009591807116834161 0.00035255970529224356" xyz="0.00225794012658298 4.607596201822162e-05 -0.1800822913646698"/>
       <mass value="0.35"/>
@@ -246,11 +234,8 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/hip.glb"/>
+        <mesh filename="meshes/visual/hip.glb"/>
       </geometry>
-      <material name="hr_hip">
-        <color rgba="0.2 0.2 0.2 1"/>
-      </material>
     </visual>
     <inertial>
       <origin rpy="-0.716521349312305 -0.02956473059648479 -0.03655230014702582" xyz="0.005374345928430557 -0.012841847725212574 9.875232353806496e-05"/>
@@ -269,11 +254,8 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/uleg.glb"/>
+        <mesh filename="meshes/visual/uleg.glb"/>
       </geometry>
-      <material name="hr_uleg">
-        <color rgba="1 0.8431 0 1"/>
-      </material>
     </visual>
     <inertial>
       <origin rpy="0.2643905306958363 -0.04853174688302708 -0.024046943559834943" xyz="0.005142373498529196 0.0024323677644133568 -0.12100915610790253"/>
@@ -292,12 +274,15 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="meshes/lleg.glb"/>
+        <mesh filename="meshes/visual/lleg.glb"/>
       </geometry>
-      <material name="hr_lleg">
-        <color rgba="0.2 0.2 0.2 1"/>
-      </material>
     </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="meshes/collision/lleg.glb"/>
+      </geometry>
+    </collision>
     <inertial>
       <origin rpy="-0.007266925694167092 -0.009591807116834161 0.00035255970529224356" xyz="0.00225794012658298 4.607596201822162e-05 -0.1800822913646698"/>
       <mass value="0.35"/>

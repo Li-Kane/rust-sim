@@ -26,10 +26,23 @@ impl Parse for URDF {
 
         // Create the link blueprints
         for link in robot.links {
+            // Create the visuals
             let mut visuals: Vec<Handle<WorldAsset>> = Vec::new();
             for visual in link.visual {
                 visuals.push(urdf_geometry_to_bevy_asset(visual.geometry, &asset_server));
             }
+
+            // Create the collisions
+            let mut collisions: Vec<Handle<WorldAsset>> = Vec::new();
+            for collision in link.collision {
+                collisions.push(urdf_geometry_to_bevy_asset(
+                    collision.geometry,
+                    &asset_server,
+                ));
+            }
+
+            // TODO: Create the material
+
             let euler = link.inertial.origin.rpy.to_bevy();
             let rotation = Quat::from_euler(EulerRot::XYZ, euler.x, euler.y, euler.z);
             let local_transform = Transform::from_translation(link.inertial.origin.xyz.to_bevy())
@@ -38,6 +51,7 @@ impl Parse for URDF {
                 name: link.name.clone(),
                 additional_mass_properties: inertial_to_additional_mass_properties(&link.inertial),
                 visuals: visuals,
+                collisions: collisions,
                 parent_joint: None,
                 children_joints: Vec::new(),
                 world_transform: local_transform,
@@ -170,6 +184,8 @@ pub fn urdf_joint_to_typed_joint(joint: &urdf_rs::Joint) -> TypedJoint {
     let local_anchor2 = Vec3::ZERO;
     let local_basis1 = Quat::from_euler(EulerRot::XYZ, joint_rpy[0], joint_rpy[1], joint_rpy[2]);
     let local_basis2 = Quat::IDENTITY;
+
+    // TODO: Handle damping, friction, limits, mimic, and safety controller
 
     match joint.joint_type {
         urdf_rs::JointType::Fixed => {
