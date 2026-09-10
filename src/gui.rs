@@ -1,9 +1,14 @@
+pub mod camera_controls;
+pub mod sim_controls;
+
 use bevy::prelude::*;
-use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
+use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
 use bevy_rapier3d::prelude::*;
 
 use crate::SimState;
 use crate::input::CameraSettings;
+use camera_controls::render_camera_controls;
+use sim_controls::render_sim_controls;
 
 #[derive(Resource, Debug, Clone)]
 pub struct SimulationSpeed {
@@ -25,6 +30,10 @@ impl Plugin for SimGuiPlugin {
             .add_systems(
                 EguiPrimaryContextPass,
                 sim_ui.run_if(in_state(SimState::Config)),
+            )
+            .add_systems(
+                Update,
+                sync_simulation_speed.run_if(resource_changed::<SimulationSpeed>),
             );
     }
 }
@@ -34,8 +43,6 @@ pub fn sim_ui(
     camera_settings: Option<ResMut<CameraSettings>>,
     mut debug_context: Option<ResMut<DebugRenderContext>>,
     mut sim_speed: Option<ResMut<SimulationSpeed>>,
-    mut timestep_mode: Option<ResMut<TimestepMode>>,
-    mut virtual_time: Option<ResMut<Time<Virtual>>>,
 ) {
     let Ok(ctx) = contexts.ctx_mut() else { return };
 
@@ -49,66 +56,34 @@ pub fn sim_ui(
                 ui.label("Press ESC to resume physics & camera controls.");
                 ui.separator();
 
-                if let Some(ref mut sim_speed) = sim_speed {
-                    egui::CollapsingHeader::new("Simulation Controls")
-                        .default_open(true)
-                        .show(ui, |ui| {
-                            let mut speed = sim_speed.speed;
-                            let mut changed = false;
-
-                            ui.horizontal(|ui| {
-                                ui.label("Simulation Speed:");
-                                let slider_res = ui.add(
-                                    egui::Slider::new(&mut speed, 0.1..=3.0)
-                                        .suffix("x")
-                                        .fixed_decimals(2),
-                                );
-                                if slider_res.changed() {
-                                    changed = true;
-                                }
-                                if ui.button("1.0x").clicked() {
-                                    speed = 1.0;
-                                    changed = true;
-                                }
-                            });
-
-                            if changed {
-                                sim_speed.speed = speed;
-                                update_sim_speed(speed, &mut timestep_mode, &mut virtual_time);
-                            }
-                        });
+                if let Some(ref mut speed) = sim_speed {
+                    render_sim_controls(ui, speed);
                     ui.add_space(8.0);
                     ui.separator();
                 }
 
                 if let Some(mut cam) = camera_settings {
-                    egui::CollapsingHeader::new("Camera Controls")
-                        .default_open(true)
-                        .show(ui, |ui| {
-                            ui.horizontal(|ui| {
-                                ui.label("Flying Speed:");
-                                ui.add(
-                                    egui::Slider::new(&mut cam.fly_speed, 0.5..=30.0)
-                                        .suffix(" m/s")
-                                        .fixed_decimals(1),
-                                );
-                            });
-                        });
+                    render_camera_controls(ui, &mut cam);
                     ui.add_space(8.0);
                     ui.separator();
                 }
+
+                // Preserved for upcoming robot joint editor / debug rendering
+                let _ = &mut debug_context;
             });
         });
 }
 
-fn update_sim_speed(
-    speed: f32,
-    timestep_mode: &mut Option<ResMut<TimestepMode>>,
-    virtual_time: &mut Option<ResMut<Time<Virtual>>>,
+pub fn sync_simulation_speed(
+    sim_speed: Res<SimulationSpeed>,
+    mut timestep_mode: Option<ResMut<TimestepMode>>,
+    mut virtual_time: Option<ResMut<Time<Virtual>>>,
 ) {
+    let speed = sim_speed.speed;
+
     // update physics speed
-    if let Some(mode) = timestep_mode {
-        match mode.as_mut() {
+    if let Some(mode) = timestep_mode.as_deref_mut() {
+        match mode {
             TimestepMode::Fixed { dt, .. } => {
                 *dt = (1.0 / 60.0) * speed;
             }
@@ -120,8 +95,9 @@ fn update_sim_speed(
             }
         }
     }
+
     // update bevy's internal time resource
-    if let Some(time) = virtual_time {
+    if let Some(time) = virtual_time.as_deref_mut() {
         time.set_relative_speed(speed);
     }
 }

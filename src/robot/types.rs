@@ -5,6 +5,7 @@ use bevy_rapier3d::dynamics::{AdditionalMassProperties, TypedJoint};
 
 pub struct RobotBlueprint {
     pub name: String,
+    pub root_link: usize,
     pub joints: Vec<JointBlueprint>,
     pub links: Vec<LinkBlueprint>,
 }

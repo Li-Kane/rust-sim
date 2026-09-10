@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
-use bevy_rapier3d::rapier::dynamics::{FrictionModel, SpringCoefficients};
 
 use crate::SimState;
 

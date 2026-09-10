@@ -7,9 +7,9 @@ use bevy_rapier3d::prelude::*;
 use bevy_rapier3d::rapier::dynamics::MassProperties as RapierMassProperties;
 use urdf_rs::Robot as RobotURDF;
 
-pub struct URDF {}
+pub struct UrdfLoader {}
 
-impl Parse for URDF {
+impl Parse for UrdfLoader {
     /// Parses a URDF file from a reader and returns a [`RobotBlueprint`].
     fn parse<R: Read>(mut reader: R, asset_server: &AssetServer) -> RobotBlueprint {
         let mut urdf_str = String::new();
@@ -50,14 +50,16 @@ impl Parse for URDF {
             links[child_link].parent_joint = Some(joint_idx);
         }
 
-        // if there is a root link, convert it to bevy coordinates
-        // we will assume the root link is the first link and is not transformed
-        if let Some(root_link) = links.first_mut() {
-            root_link.local_transform = URDF_TO_BEVY_ROT;
-        }
+        // convert root link to bevy coordinates
+        let root_link = links
+            .iter()
+            .position(|l| l.parent_joint.is_none())
+            .expect("Failed to find root link in URDF");
+        links[root_link].local_transform = URDF_TO_BEVY_ROT;
 
         RobotBlueprint {
             name: robot.name,
+            root_link,
             joints,
             links,
         }

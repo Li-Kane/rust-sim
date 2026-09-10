@@ -3,27 +3,32 @@ use bevy_rapier3d::prelude::*;
 
 use crate::robot::spawn_robot;
 use crate::robot::types::Parse;
-use crate::robot::urdf_loader::URDF;
+use crate::robot::urdf_loader::UrdfLoader;
 
+pub const GROUND_SIZE: f32 = 100.0;
+pub const GROUND_THICKNESS: f32 = 0.2;
 pub const WORLD_AXES_LENGTH: f32 = 2.0;
 
 pub struct ScenePlugin;
 
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_scene)
-            .add_systems(Update, draw_gridlines);
+        app.add_systems(
+            Startup,
+            (setup_environment, setup_camera, setup_robot),
+        )
+        .add_systems(Update, draw_gridlines);
     }
 }
 
-pub fn setup_scene(
+/// Spawns the ground plane and primary directional light.
+pub fn setup_environment(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>,
 ) {
     // 3D Solid Ground Plane (top surface at y = 0.0)
-    let ground_mesh = meshes.add(Cuboid::new(100.0, 0.2, 100.0));
+    let ground_mesh = meshes.add(Cuboid::new(GROUND_SIZE, GROUND_THICKNESS, GROUND_SIZE));
     let ground_material = materials.add(StandardMaterial {
         base_color: Color::srgb(0.05, 0.08, 0.25),
         metallic: 0.1,
@@ -33,9 +38,13 @@ pub fn setup_scene(
     commands.spawn((
         Mesh3d(ground_mesh),
         MeshMaterial3d(ground_material),
-        Transform::from_xyz(0.0, -0.1, 0.0),
+        Transform::from_xyz(0.0, -GROUND_THICKNESS / 2.0, 0.0),
         RigidBody::Fixed,
-        Collider::cuboid(25.0, 0.1, 25.0),
+        Collider::cuboid(
+            GROUND_SIZE / 2.0,
+            GROUND_THICKNESS / 2.0,
+            GROUND_SIZE / 2.0,
+        ),
         Friction::coefficient(1.0),
         Restitution::coefficient(0.0),
     ));
@@ -49,15 +58,20 @@ pub fn setup_scene(
         },
         Transform::from_xyz(4.0, 8.0, 4.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
+}
 
+/// Spawns the main 3D simulation camera.
+pub fn setup_camera(mut commands: Commands) {
     // Camera facing the Spot robot model
     commands.spawn((
         Camera3d::default(),
         Transform::from_xyz(1.5, 1.0, 1.8).looking_at(Vec3::new(0.0, 0.4, 0.0), Vec3::Y),
     ));
+}
 
-    // Spawn a SPOT robot model
-    let blueprint = URDF::parse(
+/// Spawns the default Spot robot model from URDF.
+pub fn setup_robot(commands: Commands, asset_server: Res<AssetServer>) {
+    let blueprint = UrdfLoader::parse(
         include_str!("../assets/spot.urdf").as_bytes(),
         &asset_server,
     );
