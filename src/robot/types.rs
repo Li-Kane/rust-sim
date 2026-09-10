@@ -31,3 +31,25 @@ pub trait Parse {
     /// Convert a file path to a [`RobotBluePrint`].
     fn parse<R: Read>(reader: R, asset_server: &AssetServer) -> RobotBlueprint;
 }
+
+/// A robot entity in the scene.
+#[derive(Component, Debug)]
+pub struct RobotEntity {
+    pub name: String,
+    pub joints: Vec<JointEntity>,
+    pub num_dofs: usize,
+}
+
+/// A joint entity in the scene.
+#[derive(Debug, Clone)]
+pub struct JointEntity {
+    pub name: String,
+    pub entity: Entity,
+    pub dofs: Vec<usize>,
+}
+
+/// Dynamic target pose command for the robot.
+#[derive(Component, Debug, Clone, Default)]
+pub struct RobotPose {
+    pub positions: Box<[f32]>,
+}

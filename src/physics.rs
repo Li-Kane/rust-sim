@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
+use bevy_rapier3d::rapier::dynamics::{FrictionModel, SpringCoefficients};
 
 use crate::SimState;
 
@@ -11,9 +12,10 @@ impl Plugin for PhysicsPlugin {
             RapierPhysicsPlugin::<NoUserData>::default(),
             RapierDebugRenderPlugin::default().disabled(),
         ))
-        .insert_resource(TimestepMode::Fixed {
+        .insert_resource(TimestepMode::Interpolated {
             dt: 1.0 / 60.0,
-            substeps: 4,
+            time_scale: 1.0,
+            substeps: 12,
         })
         .add_systems(OnEnter(SimState::Config), pause_physics)
         .add_systems(OnEnter(SimState::InGame), resume_physics);

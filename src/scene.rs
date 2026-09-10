@@ -62,7 +62,18 @@ pub fn setup_scene(
         &asset_server,
     );
     let robot_transform = Transform::from_xyz(0.0, 1.0, 0.0);
-    spawn_robot(commands, blueprint, Some(robot_transform));
+    let starting_pose: [f32; 12] = [
+        0.0, 0.75, -1.50, // FL
+        0.0, 0.75, -1.50, // FR
+        0.0, 0.75, -1.50, // HL
+        0.0, 0.75, -1.50, // HR
+    ];
+    spawn_robot(
+        commands,
+        blueprint,
+        Some(robot_transform),
+        Some(&starting_pose),
+    );
 }
 
 /// System to draw ground plane gridlines and world origin axes using Gizmos

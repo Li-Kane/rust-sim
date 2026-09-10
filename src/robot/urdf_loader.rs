@@ -171,8 +171,11 @@ pub fn urdf_joint_to_typed_joint(joint: &urdf_rs::Joint) -> TypedJoint {
     let origin = urdf_pose_to_transform(&joint.origin);
     let local_anchor1 = origin.translation;
     let local_basis1 = origin.rotation;
+    let lower = joint.limit.lower as f32;
+    let upper = joint.limit.upper as f32;
+    let effort = joint.limit.effort as f32;
 
-    // TODO: Handle damping, friction, limits, mimic, and safety controller
+    // TODO: Handle dynamics, mimic, and safety controller
 
     match joint.joint_type {
         urdf_rs::JointType::Fixed => {
@@ -186,6 +189,9 @@ pub fn urdf_joint_to_typed_joint(joint: &urdf_rs::Joint) -> TypedJoint {
             let axis: Vec3 = joint.axis.xyz.to_bevy();
             let joint = RevoluteJointBuilder::new(axis)
                 .local_anchor1(local_anchor1)
+                .limits([lower, upper])
+                .motor_position(0.0, 300.0, 20.0)
+                .motor_max_force(effort)
                 .build();
             TypedJoint::RevoluteJoint(joint)
         }
