@@ -5,6 +5,7 @@ use bevy::window::CursorGrabMode;
 #[derive(States, Default, Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum SimState {
     #[default]
+    Loading,
     InGame,
     Config,
 }
@@ -53,6 +54,7 @@ fn menu_screen(
         match state.get() {
             SimState::InGame => next_state.set(SimState::Config),
             SimState::Config => next_state.set(SimState::InGame),
+            SimState::Loading => {}
         }
     }
 }

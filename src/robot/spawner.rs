@@ -69,7 +69,10 @@ fn spawn_link_entity(
             for collision in &link.collisions {
                 parent.spawn((
                     WorldAssetRoot(collision.clone()),
-                    AsyncSceneCollider::default(),
+                    AsyncSceneCollider {
+                        shape: Some(ComputedColliderShape::ConvexHull),
+                        ..default()
+                    },
                     Visibility::Hidden,
                 ));
             }

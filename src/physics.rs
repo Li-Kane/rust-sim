@@ -16,6 +16,8 @@ impl Plugin for PhysicsPlugin {
             time_scale: 1.0,
             substeps: 12,
         })
+        .add_systems(Startup, pause_physics)
+        .add_systems(OnEnter(SimState::Loading), pause_physics)
         .add_systems(OnEnter(SimState::Config), pause_physics)
         .add_systems(OnEnter(SimState::InGame), resume_physics);
     }

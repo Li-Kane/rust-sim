@@ -7,13 +7,31 @@ use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
 pub use spawner::spawn_robot;
+use crate::SimState;
 use types::{RobotEntity, RobotPose};
 
 pub struct RobotPlugin;
 
 impl Plugin for RobotPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, apply_robot_pose);
+        app.add_systems(
+            Update,
+            (
+                apply_robot_pose,
+                check_robot_loaded.run_if(in_state(SimState::Loading)),
+            ),
+        );
+    }
+}
+
+/// Transitions to `SimState::InGame` once all robot collision meshes are loaded and colliders generated.
+fn check_robot_loaded(
+    mut next_state: ResMut<NextState<SimState>>,
+    robots: Query<&RobotEntity>,
+    async_colliders: Query<&AsyncSceneCollider>,
+) {
+    if !robots.is_empty() && async_colliders.is_empty() {
+        next_state.set(SimState::InGame);
     }
 }
 

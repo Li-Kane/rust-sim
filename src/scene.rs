@@ -13,11 +13,8 @@ pub struct ScenePlugin;
 
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Startup,
-            (setup_environment, setup_camera, setup_robot),
-        )
-        .add_systems(Update, draw_gridlines);
+        app.add_systems(Startup, (setup_environment, setup_camera, setup_robot))
+            .add_systems(Update, draw_gridlines);
     }
 }
 
@@ -40,11 +37,7 @@ pub fn setup_environment(
         MeshMaterial3d(ground_material),
         Transform::from_xyz(0.0, -GROUND_THICKNESS / 2.0, 0.0),
         RigidBody::Fixed,
-        Collider::cuboid(
-            GROUND_SIZE / 2.0,
-            GROUND_THICKNESS / 2.0,
-            GROUND_SIZE / 2.0,
-        ),
+        Collider::cuboid(GROUND_SIZE / 2.0, GROUND_THICKNESS / 2.0, GROUND_SIZE / 2.0),
         Friction::coefficient(1.0),
         Restitution::coefficient(0.0),
     ));
