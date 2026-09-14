@@ -6,9 +6,9 @@ pub mod urdf_loader;
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
-pub use spawner::spawn_robot;
 use crate::SimState;
-use types::{RobotEntity, RobotPose};
+pub use spawner::spawn_robot;
+use types::{RobotJoints, RobotName, RobotPose};
 
 pub struct RobotPlugin;
 
@@ -27,34 +27,34 @@ impl Plugin for RobotPlugin {
 /// Transitions to `SimState::InGame` once all robot collision meshes are loaded and colliders generated.
 fn check_robot_loaded(
     mut next_state: ResMut<NextState<SimState>>,
-    robots: Query<&RobotEntity>,
+    // robots: Query<&RobotName>,
     async_colliders: Query<&AsyncSceneCollider>,
 ) {
-    if !robots.is_empty() && async_colliders.is_empty() {
+    if async_colliders.is_empty() {
         next_state.set(SimState::InGame);
     }
 }
 
 /// Applies the robot pose to the multibody joints.
 pub fn apply_robot_pose(
-    robot_query: Query<(&RobotEntity, &RobotPose), Changed<RobotPose>>,
+    robot_query: Query<(&RobotName, &RobotJoints, &RobotPose), Changed<RobotPose>>,
     mut joint_query: Query<&mut MultibodyJoint>,
 ) {
-    for (robot, pose) in robot_query.iter() {
+    for (name, joints, pose) in robot_query.iter() {
         // size check
-        if pose.positions.len() != robot.num_dofs {
+        if pose.positions.len() != joints.num_dofs {
             warn!(
-                "Pose length {} does not match robot num_dofs {} for '{}'",
+                "Pose length {} does not match robot num_dofs {} for robot {}",
                 pose.positions.len(),
-                robot.num_dofs,
-                robot.name
+                joints.num_dofs,
+                name.0
             );
             continue;
         }
 
         // Apply the robot pose to the multibody joints
         let mut dof_idx = 0;
-        for joint in &robot.joints {
+        for joint in &joints.joints {
             if let Ok(mut multibody_joint) = joint_query.get_mut(joint.entity) {
                 let generic = &mut multibody_joint.data.as_mut().raw;
                 for dof in &joint.dofs {

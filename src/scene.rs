@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
 use crate::robot::spawn_robot;
-use crate::robot::types::Parse;
+use crate::robot::types::{Parse, SpotRobot};
 use crate::robot::urdf_loader::UrdfLoader;
 
 pub const GROUND_SIZE: f32 = 100.0;
@@ -63,7 +63,7 @@ pub fn setup_camera(mut commands: Commands) {
 }
 
 /// Spawns the default Spot robot model from URDF.
-pub fn setup_robot(commands: Commands, asset_server: Res<AssetServer>) {
+pub fn setup_robot(mut commands: Commands, asset_server: Res<AssetServer>) {
     let blueprint = UrdfLoader::parse(
         include_str!("../assets/spot.urdf").as_bytes(),
         &asset_server,
@@ -75,12 +75,13 @@ pub fn setup_robot(commands: Commands, asset_server: Res<AssetServer>) {
         0.0, 0.75, -1.50, // HL
         0.0, 0.75, -1.50, // HR
     ];
-    spawn_robot(
-        commands,
+    let spot_id = spawn_robot(
+        &mut commands,
         blueprint,
         Some(robot_transform),
         Some(&starting_pose),
     );
+    commands.entity(spot_id).insert(SpotRobot {});
 }
 
 /// System to draw ground plane gridlines and world origin axes using Gizmos

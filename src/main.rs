@@ -1,6 +1,5 @@
 use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
-
 mod gui;
 mod input;
 mod physics;
