@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
 use crate::robot::spawn_robot;
-use crate::robot::types::{Parse, SpotRobot};
+use crate::robot::types::{Parse, SpawnPose, SpotRobot};
 use crate::robot::urdf_loader::UrdfLoader;
 
 pub const GROUND_SIZE: f32 = 100.0;
@@ -75,12 +75,11 @@ pub fn setup_robot(mut commands: Commands, asset_server: Res<AssetServer>) {
         0.0, 0.75, -1.50, // HL
         0.0, 0.75, -1.50, // HR
     ];
-    let spot_id = spawn_robot(
-        &mut commands,
-        blueprint,
-        Some(robot_transform),
-        Some(&starting_pose),
-    );
+    let spawn_pose = SpawnPose {
+        root_transform: robot_transform,
+        positions: Box::new(starting_pose),
+    };
+    let spot_id = spawn_robot(&mut commands, blueprint, Some(spawn_pose));
     commands.entity(spot_id).insert(SpotRobot {});
 }
 

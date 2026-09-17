@@ -1,9 +1,12 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
+use crate::robot::types::SpawnPose;
+
 use super::kinematics::compute_link_world_transforms;
 use super::types::{
-    JointBlueprint, JointRef, LinkBlueprint, RobotBlueprint, RobotJoints, RobotName, RobotPose,
+    JointBlueprint, JointRef, LinkBlueprint, Robot, RobotBlueprint, RobotJoints, RobotName,
+    RobotPose,
 };
 
 /// Spawns a robot from a RobotBlueprint and spawns it in the scene.
@@ -11,10 +14,11 @@ use super::types::{
 pub fn spawn_robot(
     commands: &mut Commands,
     robot_blueprint: RobotBlueprint,
-    root_transform: Option<Transform>,
-    initial_pose: Option<&[f32]>,
+    spawn_pose: Option<SpawnPose>,
 ) -> Entity {
-    let root_transform = root_transform.unwrap_or(Transform::IDENTITY);
+    let spawn_pose = spawn_pose.unwrap_or_default();
+    let root_transform = spawn_pose.root_transform;
+    let initial_pose = spawn_pose.positions.clone();
     let RobotBlueprint {
         name,
         root_link,
@@ -33,14 +37,17 @@ pub fn spawn_robot(
     let robot_joints: RobotJoints = create_robot_joints(commands, &joints, &link_entities);
 
     // spawn a Robot and RobotPose component and attach it to our robot entity
-    let initial_positions = initial_pose.unwrap_or_default();
     commands
         .spawn((
+            Robot {
+                root: link_entities[root_link],
+            },
             RobotName(name),
             robot_joints,
             RobotPose {
-                positions: initial_positions.into(),
+                positions: initial_pose.into(),
             },
+            spawn_pose,
         ))
         .id()
 }
@@ -59,6 +66,11 @@ fn spawn_link_entity(
             Visibility::default(),
             link.additional_mass_properties,
             Name::new(link.name.clone()),
+            Damping {
+                linear_damping: 0.5,
+                angular_damping: 0.5,
+            },
+            Sleeping::disabled(), // TODO: Properly use sleeping system
         ))
         .with_children(|parent| {
             for visual in &link.visuals {
@@ -73,6 +85,7 @@ fn spawn_link_entity(
                         ..default()
                     },
                     Visibility::Hidden,
+                    Friction::coefficient(1.0),
                 ));
             }
         })
@@ -117,9 +130,7 @@ pub fn create_joint_entity(
     num_dofs: &mut usize,
 ) -> JointRef {
     let dof_mask = multibody_joint.data.as_ref().raw.motor_axes;
-    let dofs: Vec<usize> = (0..6)
-        .filter(|&i| (dof_mask.bits() & (1 << i)) != 0)
-        .collect();
+    let dofs: Vec<JointAxesMask> = dof_mask.iter().collect();
     *num_dofs += dofs.len();
     JointRef {
         name,

@@ -1,7 +1,7 @@
 use std::io::Read;
 
 use bevy::prelude::*;
-use bevy_rapier3d::dynamics::{AdditionalMassProperties, TypedJoint};
+use bevy_rapier3d::dynamics::{AdditionalMassProperties, JointAxesMask, TypedJoint};
 
 pub struct RobotBlueprint {
     pub name: String,
@@ -33,11 +33,22 @@ pub trait Parse {
     fn parse<R: Read>(reader: R, asset_server: &AssetServer) -> RobotBlueprint;
 }
 
+#[derive(Component, Debug, Default)]
+pub struct SpawnPose {
+    pub root_transform: Transform,
+    pub positions: Box<[f32]>,
+}
+
 #[derive(Component, Debug)]
 pub struct SpotRobot {}
 
 #[derive(Component, Debug)]
 pub struct RobotName(pub String);
+
+#[derive(Component, Debug)]
+pub struct Robot {
+    pub root: Entity,
+}
 
 #[derive(Component, Debug)]
 pub struct RobotJoints {
@@ -54,5 +65,5 @@ pub struct RobotPose {
 pub struct JointRef {
     pub name: String,
     pub entity: Entity,
-    pub dofs: Vec<usize>,
+    pub dofs: Vec<JointAxesMask>,
 }

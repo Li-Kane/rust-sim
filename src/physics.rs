@@ -16,10 +16,21 @@ impl Plugin for PhysicsPlugin {
             time_scale: 1.0,
             substeps: 12,
         })
-        .add_systems(Startup, pause_physics)
+        .add_systems(Startup, (pause_physics, configure_physics_integrator))
         .add_systems(OnEnter(SimState::Loading), pause_physics)
-        .add_systems(OnEnter(SimState::Config), pause_physics)
+        .add_systems(OnEnter(SimState::Config), resume_physics)
         .add_systems(OnEnter(SimState::InGame), resume_physics);
+    }
+}
+
+fn configure_physics_integrator(
+    mut context_query: Query<&mut RapierContextSimulation, With<DefaultRapierContext>>,
+) {
+    for mut context in &mut context_query {
+        let params = &mut context.integration_parameters;
+        // Solve friction in position-bias correction passes (default is false)
+        // Prevents contact penetration correction from inducing sideways slip
+        params.friction_in_bias_pass = true;
     }
 }
 

@@ -1,13 +1,16 @@
 pub mod camera_controls;
+pub mod robot_controls;
 pub mod sim_controls;
 
 use bevy::prelude::*;
-use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
+use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui};
 use bevy_rapier3d::prelude::*;
 
 use crate::SimState;
 use crate::input::CameraSettings;
+use crate::robot::types::{Robot, RobotJoints, RobotName, RobotPose, SpawnPose};
 use camera_controls::render_camera_controls;
+use robot_controls::render_robot_controls;
 use sim_controls::render_sim_controls;
 
 #[derive(Resource, Debug, Clone)]
@@ -41,8 +44,10 @@ impl Plugin for SimGuiPlugin {
 pub fn sim_ui(
     mut contexts: EguiContexts,
     camera_settings: Option<ResMut<CameraSettings>>,
-    mut debug_context: Option<ResMut<DebugRenderContext>>,
     mut sim_speed: Option<ResMut<SimulationSpeed>>,
+    mut robot_query: Query<(&Robot, &RobotName, &RobotJoints, &mut RobotPose, &SpawnPose)>,
+    mut link_query: Query<(&mut Transform, Option<&mut Velocity>)>,
+    mut rapier_context: Query<&mut RapierContextJoints>,
 ) {
     let Ok(ctx) = contexts.ctx_mut() else { return };
 
@@ -68,8 +73,26 @@ pub fn sim_ui(
                     ui.separator();
                 }
 
-                // Preserved for upcoming robot joint editor / debug rendering
-                let _ = &mut debug_context;
+                let mut rapier_ctx = rapier_context.iter_mut().next();
+
+                for (robot, robot_name, robot_joints, mut robot_pose, spawn_pose) in
+                    robot_query.iter_mut()
+                {
+                    let rapier_context_joints = rapier_ctx.as_deref_mut();
+
+                    render_robot_controls(
+                        ui,
+                        robot,
+                        robot_name,
+                        robot_joints,
+                        robot_pose.as_mut(),
+                        spawn_pose,
+                        &mut link_query,
+                        rapier_context_joints,
+                    );
+                    ui.add_space(8.0);
+                    ui.separator();
+                }
             });
         });
 }
