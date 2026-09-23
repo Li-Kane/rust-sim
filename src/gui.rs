@@ -99,28 +99,9 @@ pub fn sim_ui(
 
 pub fn sync_simulation_speed(
     sim_speed: Res<SimulationSpeed>,
-    mut timestep_mode: Option<ResMut<TimestepMode>>,
     mut virtual_time: Option<ResMut<Time<Virtual>>>,
 ) {
-    let speed = sim_speed.speed;
-
-    // update physics speed
-    if let Some(mode) = timestep_mode.as_deref_mut() {
-        match mode {
-            TimestepMode::Fixed { dt, .. } => {
-                *dt = (1.0 / 60.0) * speed;
-            }
-            TimestepMode::Variable { time_scale, .. } => {
-                *time_scale = speed;
-            }
-            TimestepMode::Interpolated { time_scale, .. } => {
-                *time_scale = speed;
-            }
-        }
-    }
-
-    // update bevy's internal time resource
     if let Some(time) = virtual_time.as_deref_mut() {
-        time.set_relative_speed(speed);
+        time.set_relative_speed(sim_speed.speed);
     }
 }

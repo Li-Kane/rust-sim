@@ -66,10 +66,6 @@ fn spawn_link_entity(
             Visibility::default(),
             link.additional_mass_properties,
             Name::new(link.name.clone()),
-            Damping {
-                linear_damping: 0.5,
-                angular_damping: 0.5,
-            },
             Sleeping::disabled(), // TODO: Properly use sleeping system
         ))
         .with_children(|parent| {

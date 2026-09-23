@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::io::Cursor;
 use tract_onnx::prelude::*;
 
@@ -18,7 +16,10 @@ pub const URDF_TO_POLICY: [usize; 12] = [0, 3, 6, 9, 1, 4, 7, 10, 2, 5, 8, 11];
 /// Policy to URDF joint index remapping.
 pub const POLICY_TO_URDF: [usize; 12] = [0, 4, 8, 1, 5, 9, 2, 6, 10, 3, 7, 11];
 
+use bevy::prelude::Resource;
+
 /// Spot policy inference runner using tract-onnx.
+#[derive(Resource)]
 pub struct SpotPolicy {
     model: Arc<TypedRunnableModel>,
 }

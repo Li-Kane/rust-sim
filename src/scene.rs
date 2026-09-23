@@ -68,7 +68,7 @@ pub fn setup_robot(mut commands: Commands, asset_server: Res<AssetServer>) {
         include_str!("../assets/spot.urdf").as_bytes(),
         &asset_server,
     );
-    let robot_transform = Transform::from_xyz(0.0, 1.0, 0.0);
+    let robot_transform = Transform::from_xyz(0.0, 0.6, 0.0);
     let starting_pose: [f32; 12] = [
         0.0, 0.75, -1.50, // FL
         0.0, 0.75, -1.50, // FR
@@ -80,7 +80,10 @@ pub fn setup_robot(mut commands: Commands, asset_server: Res<AssetServer>) {
         positions: Box::new(starting_pose),
     };
     let spot_id = spawn_robot(&mut commands, blueprint, Some(spawn_pose));
-    commands.entity(spot_id).insert(SpotRobot {});
+    commands.entity(spot_id).insert(SpotRobot {
+        previous_joint_pos: starting_pose,
+        ..default()
+    });
 }
 
 /// System to draw ground plane gridlines and world origin axes using Gizmos

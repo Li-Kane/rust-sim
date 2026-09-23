@@ -5,6 +5,7 @@ mod input;
 mod physics;
 mod robot;
 mod scene;
+mod spot_controller;
 
 pub use gui::SimulationSpeed;
 pub use input::{CameraSettings, SimState};
@@ -14,6 +15,7 @@ use input::HandleInputPlugin;
 use physics::PhysicsPlugin;
 use robot::RobotPlugin;
 use scene::ScenePlugin;
+use spot_controller::SpotControllerPlugin;
 
 fn main() {
     App::new()
@@ -40,6 +42,7 @@ fn main() {
             HandleInputPlugin,
             SimGuiPlugin,
             RobotPlugin,
+            SpotControllerPlugin,
         ))
         .run();
 }
